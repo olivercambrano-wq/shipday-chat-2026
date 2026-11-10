@@ -135,6 +135,7 @@ const THREADS: Record<string, { from: "me" | "them"; text: string; day?: string 
 function SimpleChat({ person, onBack }: { person: { name: string; initials: string }; onBack: () => void }) {
   const t = useTheme();
   const [input, setInput] = useState("");
+  const [focused, setFocused] = useState(false);
   const thread = THREADS[person.name] ?? [{ from: "them" as const, text: "Hey! What's up?" }];
   const [msgs, setMsgs] = useState<{ from: "me" | "them"; text: string; day?: string }[]>(thread);
 
@@ -186,23 +187,35 @@ function SimpleChat({ person, onBack }: { person: { name: string; initials: stri
 
       {/* Input */}
       <div style={{ padding: "0 16px 16px", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 16, background: t.inputBg, border: `1px solid ${t.borderLight}` }}>
+        <div style={{
+          display: "flex", flexDirection: "column", borderRadius: 18,
+          background: t.inputBg,
+          border: `1px solid ${focused ? t.accent : t.borderLight}`,
+          boxShadow: focused ? `0 0 0 3px ${t.mode === "dark" ? "rgba(0,128,98,0.15)" : "rgba(0,128,98,0.08)"}` : "0 1px 3px rgba(0,0,0,0.04)",
+          transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+          overflow: "hidden",
+        }}>
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); send(); } }}
             placeholder="Type a message..."
-            style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 15, color: t.text, fontFamily: "inherit" }}
+            style={{ border: "none", outline: "none", background: "transparent", fontSize: 15, color: t.text, fontFamily: "inherit", lineHeight: "22px", padding: "14px 18px 6px", width: "100%", boxSizing: "border-box" }}
           />
-          <button onClick={send} style={{
-            width: 34, height: 34, borderRadius: 99, border: "none", flexShrink: 0,
-            background: input.trim() ? t.accent : t.bgTertiary,
-            cursor: input.trim() ? "pointer" : "default",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "background 0.2s ease",
-          }}>
-            <Icon name="arrow_upward" size={20} color={input.trim() ? "#FFFFFF" : t.textMuted} weight={500} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "4px 8px 8px" }}>
+            <button onClick={send} style={{
+              width: 34, height: 34, borderRadius: 99, border: "none", flexShrink: 0,
+              background: input.trim() ? t.accent : t.bgTertiary,
+              cursor: input.trim() ? "pointer" : "default",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "background 0.2s ease, transform 0.12s ease",
+              transform: input.trim() ? "scale(1)" : "scale(0.95)",
+            }}>
+              <Icon name="arrow_upward" size={20} color={input.trim() ? "#FFFFFF" : t.textMuted} weight={500} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -384,6 +397,8 @@ export default function ChatShell({ open, onClose }: { open: boolean; onClose: (
           display: "flex", flexShrink: 0,
           borderTop: `1px solid ${t.border}`,
           background: t.surface,
+          padding: "6px 8px 10px",
+          gap: 4,
         }}>
           {TABS.map(tb => {
             const active = tab === tb.key;
@@ -392,27 +407,31 @@ export default function ChatShell({ open, onClose }: { open: boolean; onClose: (
                 key={tb.key}
                 onClick={() => { setTab(tb.key); setActiveAgent(null); setActivePerson(null); }}
                 style={{
-                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                  padding: "10px 0 12px", border: "none", background: "transparent",
+                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                  padding: "10px 0 8px", border: "none",
+                  background: "transparent",
                   cursor: "pointer", fontFamily: "inherit",
-                  transition: "color 120ms ease",
+                  transition: "opacity 150ms ease",
                   position: "relative",
+                  opacity: active ? 1 : 0.55,
                 }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.opacity = "0.8"; }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.opacity = "0.55"; }}
               >
                 <div style={{ position: "relative" }}>
-                  <Icon name={tb.icon} size={22} color={active ? t.accent : t.textMuted} fill={active} weight={active ? 500 : 300} />
+                  <Icon name={tb.icon} size={24} color={t.text} fill={active} weight={active ? 600 : 400} />
                   {tb.badge && (
                     <div style={{
-                      position: "absolute", top: -4, right: -8,
-                      minWidth: 16, height: 16, borderRadius: 99,
+                      position: "absolute", top: -5, right: -10,
+                      minWidth: 18, height: 18, borderRadius: 99,
                       background: "#EF4444", color: "#FFFFFF",
-                      fontSize: 11, fontWeight: 700,
+                      fontSize: 12, fontWeight: 700,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      padding: "0 4px",
+                      padding: "0 5px",
                     }}>{tb.badge}</div>
                   )}
                 </div>
-                <span style={{ fontSize: 12, fontWeight: active ? 600 : 500, color: active ? t.accent : t.textMuted }}>{tb.label}</span>
+                <span style={{ fontSize: 14, fontWeight: active ? 600 : 500, color: t.text }}>{tb.label}</span>
               </button>
             );
           })}

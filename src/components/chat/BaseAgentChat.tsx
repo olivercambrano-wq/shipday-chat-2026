@@ -238,26 +238,39 @@ export default function BaseAgentChat({ config, onBack }: { config: AgentConfig;
 
       {/* Input */}
       <div style={{ padding: "0 16px 16px", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 16, background: t.inputBg, border: `1px solid ${inputFocused ? t.border : t.borderLight}`, transition: "border-color 0.2s ease" }}>
+        <div style={{
+          display: "flex", flexDirection: "column", borderRadius: 18,
+          background: t.inputBg,
+          border: `1px solid ${inputFocused ? t.accent : t.borderLight}`,
+          boxShadow: inputFocused ? `0 0 0 3px ${t.mode === "dark" ? "rgba(0,128,98,0.15)" : "rgba(0,128,98,0.08)"}` : "0 1px 3px rgba(0,0,0,0.04)",
+          transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+          overflow: "hidden",
+        }}>
           <input
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
             onFocus={() => setInputFocused(true)}
             onBlur={() => setInputFocused(false)}
-            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
+            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
             placeholder={config.placeholder}
-            style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 15, color: t.text, fontFamily: "inherit" }}
+            style={{ border: "none", outline: "none", background: "transparent", fontSize: 15, color: t.text, fontFamily: "inherit", lineHeight: "22px", padding: "14px 18px 6px", width: "100%", boxSizing: "border-box" }}
           />
-          <button onClick={() => handleSend()} style={{
-            width: 34, height: 34, borderRadius: 99, border: "none", flexShrink: 0,
-            background: hasInput ? t.accent : t.bgTertiary,
-            cursor: hasInput ? "pointer" : "default",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "background 0.2s ease",
-          }}>
-            <Icon name="arrow_upward" size={20} color={hasInput ? "#FFFFFF" : t.textMuted} weight={500} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "4px 8px 8px" }}>
+            <button onClick={() => handleSend()} style={{
+              width: 34, height: 34, borderRadius: 99, border: "none", flexShrink: 0,
+              background: hasInput ? t.accent : t.bgTertiary,
+              cursor: hasInput ? "pointer" : "default",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "background 0.2s ease, transform 0.12s ease",
+              transform: hasInput ? "scale(1)" : "scale(0.95)",
+            }}
+              onMouseDown={e => { if (hasInput) e.currentTarget.style.transform = "scale(0.9)"; }}
+              onMouseUp={e => { e.currentTarget.style.transform = hasInput ? "scale(1)" : "scale(0.95)"; }}
+            >
+              <Icon name="arrow_upward" size={20} color={hasInput ? "#FFFFFF" : t.textMuted} weight={500} />
+            </button>
+          </div>
         </div>
       </div>
 
