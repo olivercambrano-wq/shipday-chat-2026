@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useTheme } from "../../lib/ThemeContext";
 import Icon from "../ui/Icon";
 import ChatPanel from "./ChatPanel";
+import OperationsChat from "./OperationsChat";
+import ReceptionistChat from "./ReceptionistChat";
 
 type Tab = "agents" | "team" | "customers";
 
@@ -13,8 +15,8 @@ const TABS: { key: Tab; icon: string; label: string; badge?: number }[] = [
 
 const AGENTS = [
   { id: "marketing",    name: "Marketing AI",    icon: "/marketing-manager-logo.svg", isImg: true,  status: "Active", statusColor: "#22C55E", desc: "Campaigns, SMS, coupons, print" },
-  { id: "operations",   name: "Operations AI",   icon: "local_shipping",              isImg: false, status: "Active", statusColor: "#22C55E", desc: "Orders, drivers, routes, delivery" },
-  { id: "receptionist", name: "Receptionist AI",  icon: "support_agent",              isImg: false, status: "Active", statusColor: "#22C55E", desc: "Phone calls, reservations, FAQs" },
+  { id: "operations",   name: "Operations AI",   icon: "/ai-avatar-circle.svg",       isImg: true,  status: "Active", statusColor: "#22C55E", desc: "Orders, drivers, routes, delivery" },
+  { id: "receptionist", name: "Receptionist AI",  icon: "/ai-avatar-pill.svg",        isImg: true,  status: "Active", statusColor: "#22C55E", desc: "Phone calls, reservations, FAQs" },
 ];
 
 // ── Agent list ────────────────────────────────────────────────────────────
@@ -83,9 +85,6 @@ function AgentList({ onSelect }: { onSelect: (id: string) => void }) {
 // ── Agent chat wrapper (with back button) ─────────────────────────────────
 
 function AgentChat({ agentId, onBack, onClose }: { agentId: string; onBack: () => void; onClose: () => void }) {
-  const t = useTheme();
-  const agent = AGENTS.find(a => a.id === agentId);
-
   if (agentId === "marketing") {
     return (
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -93,76 +92,61 @@ function AgentChat({ agentId, onBack, onClose }: { agentId: string; onBack: () =
       </div>
     );
   }
-
-  // Placeholder for other agents
-  return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      {/* Header */}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 10,
-        padding: "14px 14px", flexShrink: 0,
-      }}>
-        <button
-          onClick={onBack}
-          style={{
-            width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center",
-            border: "none", background: "transparent", cursor: "pointer", borderRadius: 99,
-            transition: "background 0.12s",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-        >
-          <Icon name="arrow_back" size={20} color={t.textMuted} />
-        </button>
-        {agent?.isImg
-          ? <img src={agent.icon} alt="" width={28} height={28} style={{ display: "block", objectFit: "contain" }} />
-          : <div style={{ width: 28, height: 28, borderRadius: 8, background: t.bgTertiary, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Icon name={agent?.icon ?? "smart_toy"} size={18} color={t.textMuted} />
-            </div>
-        }
-        <span style={{ fontSize: 16, fontWeight: 700, color: t.text, letterSpacing: "-0.02em" }}>
-          {agent?.name ?? "Agent"}
-        </span>
-      </div>
-
-      {/* Empty state */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: 32 }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: 18, background: t.bgTertiary,
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <Icon name={agent?.icon ?? "smart_toy"} size={32} color={t.textMuted} />
-        </div>
-        <div style={{ fontSize: 18, fontWeight: 700, color: t.text, letterSpacing: "-0.02em" }}>{agent?.name}</div>
-        <div style={{ fontSize: 15, color: t.textMuted, textAlign: "center", lineHeight: "150%", maxWidth: 280 }}>
-          {agent?.desc}. This agent is coming soon.
-        </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-          <div style={{ padding: "6px 14px", borderRadius: 999, background: t.bgTertiary, fontSize: 14, fontWeight: 500, color: t.textMuted }}>Coming soon</div>
-        </div>
-      </div>
-
-      {/* Input disabled */}
-      <div style={{ padding: "0 16px 16px", flexShrink: 0 }}>
-        <div style={{
-          display: "flex", alignItems: "center", padding: "14px 18px",
-          borderRadius: 16, background: t.bgTertiary, opacity: 0.5,
-        }}>
-          <span style={{ fontSize: 15, color: t.textMuted }}>Ask a question...</span>
-        </div>
-      </div>
-    </div>
-  );
+  if (agentId === "operations") {
+    return <OperationsChat onBack={onBack} />;
+  }
+  if (agentId === "receptionist") {
+    return <ReceptionistChat onBack={onBack} />;
+  }
+  return null;
 }
 
 // ── Simple conversation chat ──────────────────────────────────────────────
 
+const THREADS: Record<string, { from: "me" | "them"; text: string; day?: string }[]> = {
+  "Alex Carter": [
+    { from: "me", text: "Alex, can you take the 6 PM run to Westside tomorrow? Three orders.", day: "Yesterday" },
+    { from: "them", text: "Sure, I'll be there by 5:45." },
+    { from: "me", text: "Order #3472 is ready at the pass 🍕", day: "Today" },
+    { from: "them", text: "Picked it up. Leaving now." },
+    { from: "them", text: "Customer isn't answering the door. Should I leave it with the concierge?" },
+  ],
+  "Bella Chong": [
+    { from: "me", text: "Morning Bella! You're on the lunch shift today, 11 to 3.", day: "Today" },
+    { from: "them", text: "Got it 👍" },
+    { from: "me", text: "Two orders for Maple Ave are ready — #3480 and #3481." },
+    { from: "them", text: "Traffic on 5th is heavy, I'll be about 10 minutes late on #3481." },
+  ],
+  "Chris Davis": [
+    { from: "them", text: "Car is making a weird noise again.", day: "Monday" },
+    { from: "me", text: "Take it to the shop tomorrow morning, we'll cover your first run." },
+    { from: "them", text: "Fixed! It was a loose belt.", day: "Yesterday" },
+    { from: "me", text: "Great news, thanks for letting me know." },
+    { from: "them", text: "Can I swap Friday's shift with Liam? He already said yes.", day: "Today" },
+  ],
+  "Kira Jones": [
+    { from: "me", text: "Kira, the customer for #3490 asked for no-contact delivery.", day: "Today" },
+    { from: "them", text: "Noted." },
+    { from: "them", text: "Delivered ✅ Left it at the door and sent the photo." },
+  ],
+  "Diana Kim": [
+    { from: "them", text: "I updated the dinner rotation for this week.", day: "Monday" },
+    { from: "me", text: "Thanks Diana! Does it include the new drivers?" },
+    { from: "them", text: "Yes, Liam and Noah start on Wednesday." },
+    { from: "me", text: "Perfect. I'll send them the welcome checklist.", day: "Yesterday" },
+  ],
+  "Ethan Lee": [
+    { from: "them", text: "We're out of garlic bread for tonight.", day: "Yesterday" },
+    { from: "me", text: "Okay, I'll mark it as unavailable in the menu." },
+    { from: "them", text: "Thanks. Fresh batch tomorrow at 11." },
+  ],
+};
+
 function SimpleChat({ person, onBack }: { person: { name: string; initials: string }; onBack: () => void }) {
   const t = useTheme();
   const [input, setInput] = useState("");
-  const [msgs, setMsgs] = useState<{ from: "me" | "them"; text: string }[]>([
-    { from: "them", text: `Hey! How can I help you?` },
-  ]);
+  const thread = THREADS[person.name] ?? [{ from: "them" as const, text: "Hey! What's up?" }];
+  const [msgs, setMsgs] = useState<{ from: "me" | "them"; text: string; day?: string }[]>(thread);
 
   function send() {
     const msg = input.trim();
@@ -191,17 +175,22 @@ function SimpleChat({ person, onBack }: { person: { name: string; initials: stri
       </div>
 
       {/* Messages */}
-      <div className="scroll-subtle" style={{ flex: 1, overflow: "auto", padding: "16px 22px", display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="scroll-subtle" style={{ flex: 1, overflow: "auto", padding: "16px 22px", display: "flex", flexDirection: "column", gap: 8 }}>
         {msgs.map((m, i) => (
-          <div key={i} style={{ display: "flex", justifyContent: m.from === "me" ? "flex-end" : "flex-start" }}>
-            <div style={{
-              padding: "10px 16px", borderRadius: m.from === "me" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-              background: m.from === "me" ? t.bgTertiary : t.accentLight,
-              color: t.text, fontSize: 15, lineHeight: "22px", maxWidth: "80%",
-            }}>
-              {m.text}
+          <React.Fragment key={i}>
+            {m.day && (i === 0 || msgs[i - 1].day !== m.day) && (
+              <div style={{ textAlign: "center", fontSize: 12, fontWeight: 500, color: t.textMuted, padding: "8px 0", marginTop: i > 0 ? 8 : 0 }}>{m.day}</div>
+            )}
+            <div style={{ display: "flex", justifyContent: m.from === "me" ? "flex-end" : "flex-start" }}>
+              <div style={{
+                padding: "10px 16px", borderRadius: m.from === "me" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                background: m.from === "me" ? (t.mode === "dark" ? "#03624C" : "#D0FBE7") : t.bgTertiary,
+                color: t.text, fontSize: 15, lineHeight: "22px", maxWidth: "80%",
+              }}>
+                {m.text}
+              </div>
             </div>
-          </div>
+          </React.Fragment>
         ))}
       </div>
 
@@ -233,11 +222,14 @@ function SimpleChat({ person, onBack }: { person: { name: string; initials: stri
 // ── Team view ─────────────────────────────────────────────────────────────
 
 const TEAM_MEMBERS = [
-  { name: "Marco Rivera", role: "Driver", msg: "Heading to pickup now", time: "2m", online: true },
-  { name: "Ana Torres", role: "Driver", msg: "Order #1042 delivered", time: "8m", online: true },
-  { name: "Luis Mendez", role: "Driver", msg: "Running 5 min late", time: "15m", online: false },
-  { name: "Sofia Martinez", role: "Manager", msg: "Updated the weekend schedule", time: "1h", online: true },
-  { name: "Carlos Rivera", role: "Kitchen", msg: "Out of avocado, switching to guac", time: "2h", online: false },
+  { name: "Alex Carter", role: "Driver", msg: "Customer isn't answering the door. Should I leave it with the concierge?", time: "10:19 AM", online: true, unread: true },
+  { name: "Bella Chong", role: "Driver", msg: "Traffic on 5th is heavy, I'll be about 10 minutes late on #3481.", time: "11:46 AM", online: true, unread: true },
+  { name: "Chris Davis", role: "Driver", msg: "Can I swap Friday's shift with Liam? He already said yes.", time: "8:47 AM", online: false, unread: true },
+  { name: "Kira Jones", role: "Driver", msg: "Delivered ✅ Left it at the door and sent the photo.", time: "12:28 PM", online: true, unread: false },
+  { name: "Diana Kim", role: "Dispatcher", msg: "Yes, Liam and Noah start on Wednesday.", time: "Mon", online: false, unread: false },
+  { name: "Ethan Lee", role: "Kitchen", msg: "Thanks. Fresh batch tomorrow at 11.", time: "Yesterday", online: false, unread: false },
+  { name: "Liam Brooks", role: "Driver", msg: "On my way, be there in 5.", time: "Yesterday", online: true, unread: false },
+  { name: "Noah Rivera", role: "Driver", msg: "Can I pick up extra shifts this week?", time: "Mon", online: false, unread: false },
 ];
 
 function TeamView({ onSelectPerson }: { onSelectPerson: (p: { name: string; initials: string }) => void }) {
@@ -265,12 +257,15 @@ function TeamView({ onSelectPerson }: { onSelectPerson: (p: { name: string; init
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: t.text }}>{c.name}</span>
+                  <span style={{ fontSize: 14, fontWeight: c.unread ? 700 : 600, color: t.text }}>{c.name}</span>
                   <span style={{ fontSize: 14, color: t.textMuted }}>· {c.role}</span>
                 </div>
-                <div style={{ fontSize: 14, color: t.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>{c.msg}</div>
+                <div style={{ fontSize: 14, fontWeight: c.unread ? 500 : 400, color: c.unread ? t.text : t.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>{c.msg}</div>
               </div>
-              <span style={{ fontSize: 14, color: t.textMuted, flexShrink: 0 }}>{c.time}</span>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+                <span style={{ fontSize: 14, color: t.textMuted }}>{c.time}</span>
+                {c.unread && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#CC4A30" }} />}
+              </div>
             </div>
           ))}
         </div>
