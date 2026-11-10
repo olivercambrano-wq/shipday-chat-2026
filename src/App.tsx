@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ThemeProvider, useTheme } from "./lib/ThemeContext";
-import TopBar from "./components/TopBar";
-import ChatPanel from "./components/chat/ChatPanel";
+import Navbar from "./components/TopBar";
+import ChatShell from "./components/chat/ChatShell";
 import Icon from "./components/ui/Icon";
 
 function AppInner() {
@@ -10,7 +10,7 @@ function AppInner() {
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: t.bg, transition: "background 300ms ease" }}>
-      <TopBar />
+      <Navbar />
 
       {/* Main area */}
       <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
@@ -59,7 +59,7 @@ function AppInner() {
       </button>
 
       {/* Chat panel */}
-      <ChatPanel
+      <ChatShell
         open={chatOpen}
         onClose={() => setChatOpen(false)}
       />

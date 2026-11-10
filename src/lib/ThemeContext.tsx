@@ -23,7 +23,7 @@ export type Theme = {
 
 export const lightTheme: Theme = {
   mode: "light",
-  font: "inherit",
+  font: "'Avenir', 'Nunito', system-ui, sans-serif",
   bg: "#FFFFFF",
   bgSecondary: "#F8F8F5",
   bgTertiary: "#F7F7FA",
@@ -44,7 +44,7 @@ export const lightTheme: Theme = {
 
 export const darkTheme: Theme = {
   mode: "dark",
-  font: "inherit",
+  font: "'Avenir', 'Nunito', system-ui, sans-serif",
   bg: "#0F0F0F",
   bgSecondary: "#0A0A0A",
   bgTertiary: "#2A2A2A",

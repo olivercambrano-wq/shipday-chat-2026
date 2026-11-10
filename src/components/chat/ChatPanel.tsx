@@ -1067,7 +1067,7 @@ function PrintOrderSummaryConnected({ format, quantity }: { format: string; quan
   }} />;
 }
 
-export default function MarketingChatPanel({ open, onClose, initialMessage, userMode, onNavigate, onApproveAll, onOpenPrintOrder }: {
+export default function MarketingChatPanel({ open, onClose, initialMessage, userMode, onNavigate, onApproveAll, onOpenPrintOrder, embedded }: {
   open: boolean;
   onClose: () => void;
   initialMessage?: string;
@@ -1075,6 +1075,7 @@ export default function MarketingChatPanel({ open, onClose, initialMessage, user
   onNavigate?: (page: string) => void;
   onApproveAll?: () => void;
   onOpenPrintOrder?: (channel: string) => void;
+  embedded?: boolean;
 }) {
   const t = useTheme();
   _printOrderCallback = onOpenPrintOrder ?? null;
@@ -1382,37 +1383,31 @@ export default function MarketingChatPanel({ open, onClose, initialMessage, user
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose, uploadOpen, featuresOpen, drawerOpen]);
 
+  const panelStyle: React.CSSProperties = embedded
+    ? { flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", background: t.surface }
+    : {
+        position: "fixed", top: 76, right: 16, bottom: 16,
+        width: expanded ? 680 : 460, zIndex: 1000,
+        display: "flex", flexDirection: "column",
+        background: t.surface, borderRadius: 20, border: "none",
+        boxShadow: "0 16px 64px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06)",
+        overflow: "hidden",
+        transform: open ? "translateX(0) scale(1)" : "translateX(20px) scale(0.96)",
+        opacity: open ? 1 : 0, filter: open ? "blur(0px)" : "blur(4px)",
+        transition: "transform 380ms cubic-bezier(0.16,1,0.3,1), opacity 280ms ease, filter 280ms ease, width 250ms cubic-bezier(0.4,0,0.2,1)",
+        pointerEvents: open ? "auto" : "none",
+      };
+
   return (
     <>
-      {/* Backdrop */}
-      {open && (
+      {/* Backdrop — standalone only */}
+      {!embedded && open && (
         <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,0.03)" }} />
       )}
 
       <FocusStyles />
 
-      {/* Panel */}
-      <div
-        role="dialog"
-        aria-label="AI Marketing Manager"
-        aria-modal="true"
-        style={{
-          position: "fixed",
-          top: 76, right: 16, bottom: 16,
-          width: expanded ? 680 : 460, zIndex: 1000,
-          display: "flex", flexDirection: "column",
-          background: t.surface,
-          borderRadius: 20,
-          border: "none",
-          boxShadow: "0 16px 64px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06)",
-          overflow: "hidden",
-          transform: open ? "translateX(0) scale(1)" : "translateX(20px) scale(0.96)",
-          opacity: open ? 1 : 0,
-          filter: open ? "blur(0px)" : "blur(4px)",
-          transition: "transform 380ms cubic-bezier(0.16,1,0.3,1), opacity 280ms ease, filter 280ms ease, width 250ms cubic-bezier(0.4,0,0.2,1)",
-          pointerEvents: open ? "auto" : "none",
-        }}
-      >
+      <div role="dialog" aria-label="AI Marketing Manager" style={panelStyle}>
         {/* Background gradient — empty state only */}
         {isEmpty && (
           <div style={{

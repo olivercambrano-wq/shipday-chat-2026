@@ -1,5 +1,5 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+body { font-family: "Avenir", "Nunito", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 ::selection { background: rgba(0,128,98,0.15); }
 
 /* Animations */
