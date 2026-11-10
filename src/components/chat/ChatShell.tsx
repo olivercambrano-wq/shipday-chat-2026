@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTheme } from "../../lib/ThemeContext";
 import Icon from "../ui/Icon";
-import ChatPanel from "./ChatPanel";
+import MarketingChat from "./MarketingChat";
 import OperationsChat from "./OperationsChat";
 import ReceptionistChat from "./ReceptionistChat";
 
@@ -85,19 +85,9 @@ function AgentList({ onSelect }: { onSelect: (id: string) => void }) {
 // ── Agent chat wrapper (with back button) ─────────────────────────────────
 
 function AgentChat({ agentId, onBack, onClose }: { agentId: string; onBack: () => void; onClose: () => void }) {
-  if (agentId === "marketing") {
-    return (
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <ChatPanel open={true} onClose={onClose} embedded onBack={onBack} />
-      </div>
-    );
-  }
-  if (agentId === "operations") {
-    return <OperationsChat onBack={onBack} />;
-  }
-  if (agentId === "receptionist") {
-    return <ReceptionistChat onBack={onBack} />;
-  }
+  if (agentId === "marketing") return <MarketingChat onBack={onBack} />;
+  if (agentId === "operations") return <OperationsChat onBack={onBack} />;
+  if (agentId === "receptionist") return <ReceptionistChat onBack={onBack} />;
   return null;
 }
 
