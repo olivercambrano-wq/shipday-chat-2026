@@ -171,7 +171,7 @@ function SimpleChat({ person, onBack }: { person: { name: string; initials: stri
             {m.day && (i === 0 || msgs[i - 1].day !== m.day) && (
               <div style={{ textAlign: "center", fontSize: 12, fontWeight: 500, color: t.textMuted, padding: "8px 0", marginTop: i > 0 ? 8 : 0 }}>{m.day}</div>
             )}
-            <div style={{ display: "flex", justifyContent: m.from === "me" ? "flex-end" : "flex-start" }}>
+            <div style={{ display: "flex", justifyContent: m.from === "me" ? "flex-end" : "flex-start", animation: "bubbleIn 250ms cubic-bezier(0.16,1,0.3,1) both" }}>
               <div style={{
                 padding: "10px 16px", borderRadius: m.from === "me" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
                 background: m.from === "me" ? (t.mode === "dark" ? "#03624C" : "#D0FBE7") : t.bgTertiary,
@@ -361,26 +361,26 @@ export default function ChatShell({ open, onClose }: { open: boolean; onClose: (
         }}
       >
         {/* Content area */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
           {tab === "agents" && (
             activeAgent
-              ? <AgentChat agentId={activeAgent} onBack={() => setActiveAgent(null)} onClose={onClose} />
-              : <AgentList onSelect={setActiveAgent} />
+              ? <div key={`agent-${activeAgent}`} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "pushIn 280ms cubic-bezier(0.16,1,0.3,1) both" }}><AgentChat agentId={activeAgent} onBack={() => setActiveAgent(null)} onClose={onClose} /></div>
+              : <div key="agent-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><AgentList onSelect={setActiveAgent} /></div>
           )}
           {tab === "team" && (
             activePerson
-              ? <SimpleChat person={activePerson} onBack={() => setActivePerson(null)} />
-              : <TeamView onSelectPerson={setActivePerson} />
+              ? <div key={`team-${activePerson.name}`} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "pushIn 280ms cubic-bezier(0.16,1,0.3,1) both" }}><SimpleChat person={activePerson} onBack={() => setActivePerson(null)} /></div>
+              : <div key="team-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><TeamView onSelectPerson={setActivePerson} /></div>
           )}
           {tab === "customers" && (
             activePerson
-              ? <SimpleChat person={activePerson} onBack={() => setActivePerson(null)} />
-              : <CustomersView onSelectPerson={setActivePerson} />
+              ? <div key={`cust-${activePerson.name}`} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "pushIn 280ms cubic-bezier(0.16,1,0.3,1) both" }}><SimpleChat person={activePerson} onBack={() => setActivePerson(null)} /></div>
+              : <div key="cust-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><CustomersView onSelectPerson={setActivePerson} /></div>
           )}
         </div>
 
-        {/* Bottom tab bar */}
-        <div style={{
+        {/* Bottom tab bar — hidden when inside a conversation */}
+        {!activeAgent && !activePerson && <div style={{
           display: "flex", flexShrink: 0,
           borderTop: `1px solid ${t.border}`,
           background: t.surface,
@@ -416,7 +416,7 @@ export default function ChatShell({ open, onClose }: { open: boolean; onClose: (
               </button>
             );
           })}
-        </div>
+        </div>}
       </div>
     </>
   );

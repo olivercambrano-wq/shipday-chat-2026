@@ -80,6 +80,7 @@ export default function BaseAgentChat({ config, onBack }: { config: AgentConfig;
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>(config.initialMessages ?? []);
   const [typing, setTyping] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isEmpty = messages.length === 0;
@@ -191,7 +192,7 @@ export default function BaseAgentChat({ config, onBack }: { config: AgentConfig;
           /* Messages */
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             {messages.map((msg, i) => msg.role === "user" ? (
-              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+              <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, animation: "bubbleIn 250ms cubic-bezier(0.16,1,0.3,1) both" }}>
                 <div style={{
                   padding: "10px 16px", borderRadius: "14px 14px 4px 14px",
                   background: t.mode === "dark" ? "#03624C" : "#D0FBE7",
@@ -202,7 +203,7 @@ export default function BaseAgentChat({ config, onBack }: { config: AgentConfig;
                 {msg.time && <span style={{ fontSize: 12, color: t.textMuted, paddingRight: 4 }}>{msg.time}</span>}
               </div>
             ) : (
-              <div key={i} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div key={i} style={{ display: "flex", flexDirection: "column", gap: 12, animation: "bubbleIn 300ms cubic-bezier(0.16,1,0.3,1) both" }}>
                 {msg.text && <div style={{ color: t.text, fontSize: 15, lineHeight: "24px", whiteSpace: "pre-line" }}>{msg.text}</div>}
                 {msg.card && msg.card()}
                 {msg.followUps && msg.followUps.length > 0 && (
@@ -225,8 +226,8 @@ export default function BaseAgentChat({ config, onBack }: { config: AgentConfig;
             ))}
             {typing && (
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ display: "flex", gap: 4 }}>
-                  {[0,1,2].map(i => <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: t.accent, opacity: 0.4, animation: `mktOrbit 1.2s ease ${i * 0.2}s infinite` }} />)}
+                <div style={{ display: "flex", gap: 5 }}>
+                  {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: t.accent, animation: `dotPulse 1.4s ease ${i * 0.16}s infinite` }} />)}
                 </div>
                 <span style={{ fontSize: 14, color: t.textMuted }}>Thinking...</span>
               </div>
@@ -237,11 +238,13 @@ export default function BaseAgentChat({ config, onBack }: { config: AgentConfig;
 
       {/* Input */}
       <div style={{ padding: "0 16px 16px", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 16, background: t.inputBg, border: `1px solid ${t.borderLight}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 16, background: t.inputBg, border: `1px solid ${inputFocused ? t.border : t.borderLight}`, transition: "border-color 0.2s ease" }}>
           <input
             ref={inputRef}
             value={input}
             onChange={e => setInput(e.target.value)}
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
             onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
             placeholder={config.placeholder}
             style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 15, color: t.text, fontFamily: "inherit" }}
@@ -258,8 +261,6 @@ export default function BaseAgentChat({ config, onBack }: { config: AgentConfig;
         </div>
       </div>
 
-      {/* Keyframes */}
-      <style>{`@keyframes mktOrbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
