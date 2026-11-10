@@ -1067,7 +1067,7 @@ function PrintOrderSummaryConnected({ format, quantity }: { format: string; quan
   }} />;
 }
 
-export default function MarketingChatPanel({ open, onClose, initialMessage, userMode, onNavigate, onApproveAll, onOpenPrintOrder, embedded }: {
+export default function MarketingChatPanel({ open, onClose, initialMessage, userMode, onNavigate, onApproveAll, onOpenPrintOrder, embedded, onBack }: {
   open: boolean;
   onClose: () => void;
   initialMessage?: string;
@@ -1076,6 +1076,7 @@ export default function MarketingChatPanel({ open, onClose, initialMessage, user
   onApproveAll?: () => void;
   onOpenPrintOrder?: (channel: string) => void;
   embedded?: boolean;
+  onBack?: () => void;
 }) {
   const t = useTheme();
   _printOrderCallback = onOpenPrintOrder ?? null;
@@ -1426,18 +1427,18 @@ export default function MarketingChatPanel({ open, onClose, initialMessage, user
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <button
-              aria-label="Chat history"
-              onClick={() => setDrawerOpen((o) => !o)}
+              aria-label={onBack ? "Back" : "Chat history"}
+              onClick={onBack ? onBack : () => setDrawerOpen((o) => !o)}
               className="copilot-btn"
               style={{
                 width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center",
-                border: "none", background: drawerOpen ? t.surfaceHover : "transparent",
+                border: "none", background: !onBack && drawerOpen ? t.surfaceHover : "transparent",
                 cursor: "pointer", borderRadius: 99, transition: "background 0.12s",
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = t.surfaceHover; }}
-              onMouseLeave={(e) => { if (!drawerOpen) e.currentTarget.style.background = "transparent"; }}
+              onMouseLeave={(e) => { if (onBack || !drawerOpen) e.currentTarget.style.background = "transparent"; }}
             >
-              <Icon name="menu" size={22} color={t.textMuted} weight={400} />
+              <Icon name={onBack ? "arrow_back" : "menu"} size={22} color={t.textMuted} weight={400} />
             </button>
             <img src="/marketing-manager-logo.svg" alt="" width={34} height={34} style={{ display: "block", flexShrink: 0, objectFit: "contain" }} />
             <span style={{ fontSize: 16, fontWeight: 700, color: t.text, letterSpacing: "-0.02em" }}>
@@ -1473,20 +1474,22 @@ export default function MarketingChatPanel({ open, onClose, initialMessage, user
             >
               <Icon name="edit_square" size={18} color={t.textMuted} weight={400} />
             </button>
-            <button
-              aria-label="Close"
-              onClick={onClose}
-              className="copilot-btn"
-              style={{
-                width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center",
-                border: "none", background: "transparent", cursor: "pointer", borderRadius: 99,
-                transition: "background 0.12s",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = t.surfaceHover; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-            >
-              <Icon name="close" size={22} color={t.textMuted} weight={400} />
-            </button>
+            {!embedded && (
+              <button
+                aria-label="Close"
+                onClick={onClose}
+                className="copilot-btn"
+                style={{
+                  width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center",
+                  border: "none", background: "transparent", cursor: "pointer", borderRadius: 99,
+                  transition: "background 0.12s",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = t.surfaceHover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+              >
+                <Icon name="close" size={22} color={t.textMuted} weight={400} />
+              </button>
+            )}
           </div>
         </div>
 
