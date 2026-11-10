@@ -1,0 +1,16 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+::selection { background: rgba(0,128,98,0.15); }
+
+/* Animations */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.btn-press { transition: transform 0.15s ease, opacity 0.15s ease; }
+.btn-press:active { transform: scale(0.97); }
+
+/* Scrollbar */
+.scroll-subtle::-webkit-scrollbar { width: 6px; }
+.scroll-subtle::-webkit-scrollbar-track { background: transparent; }
+.scroll-subtle::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
+.scroll-subtle::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
