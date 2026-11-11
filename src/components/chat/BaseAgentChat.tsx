@@ -61,7 +61,7 @@ export function AlertCard({ icon, title, text, type = "info" }: { icon: string; 
   };
   const s = styles[type] ?? styles.info;
   return (
-    <div style={{ display: "flex", gap: 10, padding: "12px 14px", borderRadius: 12, background: s.bg, borderLeft: `3px solid ${s.accent}` }}>
+    <div style={{ display: "flex", gap: 10, padding: "12px 14px", borderRadius: 12, background: s.bg }}>
       <Icon name={icon} size={18} color={s.accent} weight={400} style={{ marginTop: 1, flexShrink: 0 }} />
       <div>
         {title && <div style={{ fontSize: 14, fontWeight: 600, color: t.text, marginBottom: 3 }}>{title}</div>}
@@ -73,9 +73,7 @@ export function AlertCard({ icon, title, text, type = "info" }: { icon: string; 
 
 // ── Base Agent Chat ───────────────────────────────────────────────────────
 
-let plainIdx = 0;
-
-export default function BaseAgentChat({ config, onBack }: { config: AgentConfig; onBack: () => void }) {
+export default function BaseAgentChat({ config, onBack, onClose, onEditProfile, nameOverride, avatarOverride, gradientOverride, onStatusChange }: { config: AgentConfig; onBack: () => void; onClose?: () => void; onEditProfile?: () => void; nameOverride?: string; avatarOverride?: string; gradientOverride?: string; onStatusChange?: (s: { isTyping: boolean; lastMsg?: string }) => void }) {
   const t = useTheme();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>(config.initialMessages ?? []);
@@ -83,15 +81,21 @@ export default function BaseAgentChat({ config, onBack }: { config: AgentConfig;
   const [inputFocused, setInputFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const plainIdxRef = useRef(0);
+  // Keep latest onStatusChange in a ref so callbacks never go stale
+  const statusRef = useRef(onStatusChange);
+  useEffect(() => { statusRef.current = onStatusChange; }, [onStatusChange]);
   const isEmpty = messages.length === 0;
   const hasInput = input.trim().length > 0;
 
   // Helpers for onMessage callback
   const addReply = useCallback((reply: Reply, delay = 900) => {
     setTyping(true);
+    statusRef.current?.({ isTyping: true });
     setTimeout(() => {
       setMessages(prev => [...prev, { role: "assistant", text: reply.text, card: reply.card, followUps: reply.followUps, time: nowTime() }]);
       setTyping(false);
+      statusRef.current?.({ isTyping: false, ...(reply.text ? { lastMsg: reply.text } : {}) });
     }, delay);
   }, []);
 
@@ -120,10 +124,12 @@ export default function BaseAgentChat({ config, onBack }: { config: AgentConfig;
 
     // Standard keyword matching
     setTyping(true);
+    statusRef.current?.({ isTyping: true });
     setTimeout(() => {
-      const reply = matchReply(msg) ?? config.plainReplies[plainIdx++ % config.plainReplies.length];
+      const reply = matchReply(msg) ?? config.plainReplies[plainIdxRef.current++ % config.plainReplies.length];
       setMessages(prev => [...prev, { role: "assistant", text: reply.text, card: reply.card, followUps: reply.followUps, time: nowTime() }]);
       setTyping(false);
+      statusRef.current?.({ isTyping: false, ...(reply.text ? { lastMsg: reply.text } : {}) });
     }, 900);
   }, [input, config, addReply, addUserMsg]);
 
@@ -157,8 +163,30 @@ export default function BaseAgentChat({ config, onBack }: { config: AgentConfig;
         >
           <Icon name="arrow_back" size={20} color={t.textMuted} />
         </button>
-        <img src={config.avatar} alt="" width={30} height={30} style={{ display: "block", borderRadius: "50%", objectFit: "contain" }} />
-        <span style={{ fontSize: 16, fontWeight: 700, color: t.text, letterSpacing: "-0.02em" }}>{config.name}</span>
+        <div
+          onClick={onEditProfile}
+          style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, cursor: onEditProfile ? "pointer" : "default", borderRadius: 10, padding: "4px 8px", margin: "-4px -8px", transition: "background 120ms ease" }}
+          onMouseEnter={e => { if (onEditProfile) e.currentTarget.style.background = t.surfaceHover; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+        >
+          {gradientOverride ? (
+            <div style={{ width: 30, height: 30, borderRadius: "50%", background: gradientOverride, overflow: "hidden", flexShrink: 0 }}>
+              <img src={avatarOverride || config.avatar} alt="" width={30} height={30} style={{ display: "block", borderRadius: "50%", mixBlendMode: "luminosity" }} />
+            </div>
+          ) : (
+            <img src={avatarOverride || config.avatar} alt="" width={30} height={30} style={{ display: "block", borderRadius: "50%", objectFit: "contain" }} />
+          )}
+          <span style={{ fontSize: 16, fontWeight: 700, color: t.text, letterSpacing: "-0.02em" }}>{nameOverride || config.name}</span>
+          {onEditProfile && <Icon name="edit" size={14} color={t.textMuted} />}
+        </div>
+        {onClose && (
+          <button onClick={onClose} style={{ width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "none", background: "transparent", cursor: "pointer", borderRadius: 99, transition: "background 0.12s", flexShrink: 0 }}
+            onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+          >
+            <Icon name="close" size={22} color={t.textMuted} />
+          </button>
+        )}
       </div>
 
       {/* Body */}
@@ -170,15 +198,21 @@ export default function BaseAgentChat({ config, onBack }: { config: AgentConfig;
         {isEmpty ? (
           /* Empty state */
           <div style={{ textAlign: "center", marginTop: -40, display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
-            <img src={config.avatar} alt="" width={56} height={56} style={{ display: "block", marginBottom: 16, borderRadius: "50%", objectFit: "contain" }} />
-            <span style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.03em", color: t.text, display: "block", marginBottom: 16 }}>{config.name}</span>
+            {gradientOverride ? (
+              <div style={{ width: 56, height: 56, borderRadius: "50%", background: gradientOverride, overflow: "hidden", marginBottom: 16, flexShrink: 0 }}>
+                <img src={avatarOverride || config.avatar} alt="" width={56} height={56} style={{ display: "block", borderRadius: "50%", mixBlendMode: "luminosity" }} />
+              </div>
+            ) : (
+              <img src={avatarOverride || config.avatar} alt="" width={56} height={56} style={{ display: "block", marginBottom: 16, borderRadius: "50%", objectFit: "contain" }} />
+            )}
+            <span style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.03em", color: t.text, display: "block", marginBottom: 16 }}>{nameOverride || config.name}</span>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%" }}>
               {config.suggestions.map(text => (
                 <button key={text} onClick={() => handleSend(text)} style={{
                   display: "flex", alignItems: "flex-start",
                   padding: "14px 16px", border: "none", borderRadius: 12,
                   background: t.bgTertiary, cursor: "pointer",
-                  fontSize: 14, fontWeight: 400, color: t.textSecondary,
+                  fontSize: 15, fontWeight: 500, color: t.text,
                   fontFamily: "inherit", textAlign: "left",
                   lineHeight: "20px", transition: "background 0.15s", minHeight: 52,
                 }}

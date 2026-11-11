@@ -37,7 +37,7 @@ const iconBtn: React.CSSProperties = {
 
 const navLinks = ["Dispatch", "Orders", "Drivers", "Routes", "Reviews", "Reports", "Marketing"];
 
-export default function Navbar() {
+export default function Navbar({ unreadCount = 0 }: { unreadCount?: number }) {
   const t = useTheme();
   const { toggle: toggleDark } = useThemeToggle();
   const [logoHovered, setLogoHovered] = useState(false);
@@ -142,12 +142,28 @@ export default function Navbar() {
 
         <div style={{ width: 1, height: 20, background: t.border, margin: "0 8px", flexShrink: 0 }} />
 
-        <button style={iconBtn}
-          onMouseEnter={(e) => { e.currentTarget.style.background = t.surfaceHover; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-        >
-          <Icon name="campaign" size={24} color={t.textMuted} />
-        </button>
+        <div style={{ position: "relative" }}>
+          <button style={iconBtn}
+            onMouseEnter={(e) => { e.currentTarget.style.background = t.surfaceHover; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+          >
+            <Icon name="campaign" size={24} color={t.textMuted} />
+          </button>
+          {unreadCount > 0 && (
+            <div style={{
+              position: "absolute", top: -2, right: -2,
+              minWidth: 18, height: 18, borderRadius: 99,
+              background: "#EF4444", color: "#FFFFFF",
+              fontSize: 11, fontWeight: 700,
+              border: `2px solid ${t.bg}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "0 4px", boxSizing: "border-box",
+              pointerEvents: "none",
+            }}>
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </div>
+          )}
+        </div>
 
         <button style={iconBtn}
           onMouseEnter={(e) => { e.currentTarget.style.background = t.surfaceHover; }}

@@ -194,6 +194,11 @@ const RICH_REPLIES: Record<string, Reply> = {
     ),
     followUps: ["Create a new code", "Show top codes"],
   },
+  flyer: {
+    text: "Here's a print flyer draft based on your current promotion:",
+    card: () => <CampaignProposal name="Weekend Special — Print Flyer" type="Print · A5 / Letter · 500 copies" icon="print" preview="20% off this weekend only. Mention this flyer at checkout or scan the QR code to order online." />,
+    followUps: ["Create a coupon code to pair", "Create an SMS campaign"],
+  },
   greeting: { text: "Hey! I'm your AI Marketing Manager. I help you create campaigns, manage coupon codes, track performance, and grow your restaurant's revenue. What would you like to do?", followUps: ["Create an SMS campaign", "How are my campaigns doing?", "Show pending approvals"] },
   ack: { text: "Anything else I can help with?", followUps: ["Create a campaign", "Show my stats", "Show pending approvals"] },
   help: { text: "I can help you with:\n• Create and manage SMS campaigns\n• Set up tracking page promotions\n• Launch print flyer campaigns\n• Create and manage coupon codes\n• Check campaign stats and ROI\n• Review and approve pending campaigns", followUps: ["Create a campaign", "Show my stats"] },
@@ -208,6 +213,7 @@ const CONFIG = {
     { keys: ["ok", "okay", "got it", "thanks", "thank you", "cool"],                   reply: "ack" },
     { keys: ["hello", "hi", "hey", "good morning"],                                     reply: "greeting" },
     { keys: ["help", "what can you"],                                                    reply: "help" },
+    { keys: ["print", "flyer", "flyer order", "print campaign", "print flyer"],           reply: "flyer" },
     { keys: ["create coupon", "coupon code", "new coupon", "new code"],                  reply: "createCoupon" },
     { keys: ["create sms", "create an sms", "new sms", "create campaign", "new campaign"], reply: "create" },
     { keys: ["approve all", "approve everything"],                                       reply: "pending" },
@@ -224,6 +230,6 @@ const CONFIG = {
   ],
 };
 
-export default function MarketingChat({ onBack }: { onBack: () => void }) {
-  return <BaseAgentChat config={CONFIG} onBack={onBack} />;
+export default function MarketingChat({ onBack, onClose, onEditProfile, nameOverride, avatarOverride, gradientOverride, onStatusChange }: { onBack: () => void; onClose?: () => void; onEditProfile?: () => void; nameOverride?: string; avatarOverride?: string; gradientOverride?: string; onStatusChange?: (s: { isTyping: boolean; lastMsg?: string }) => void }) {
+  return <BaseAgentChat config={CONFIG} onBack={onBack} onClose={onClose} onEditProfile={onEditProfile} nameOverride={nameOverride} avatarOverride={avatarOverride} gradientOverride={gradientOverride} onStatusChange={onStatusChange} />;
 }

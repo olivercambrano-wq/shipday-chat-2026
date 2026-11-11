@@ -96,6 +96,19 @@ const RICH_REPLIES: Record<string, Reply> = {
     card: () => <StatsRow stats={[{ label: "Total routes", value: "8" }, { label: "Completed", value: "5" }, { label: "In progress", value: "3" }]} />,
     followUps: ["Show active routes", "Optimize routes"],
   },
+  orders: {
+    text: "Here are your active orders:",
+    card: () => (
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <OrderCard id="3488" store="Bella's Pizza" status="On time" time="In transit · 8 min away" />
+        <OrderCard id="3489" store="Taco Express" status="On time" time="Pickup in 3 min" />
+        <OrderCard id="3490" store="Sushi Place" status="Late" time="12 min late · driver en route" />
+        <OrderCard id="3492" store="Sushi Place" status="Unassigned" time="Pickup in 10 min" />
+        <OrderCard id="3495" store="Burger Joint" status="Unassigned" time="Pickup in 18 min" />
+      </div>
+    ),
+    followUps: ["Show late orders", "Unassigned orders"],
+  },
   assign:  { text: null, card: () => <AlertCard type="success" icon="check_circle" title="Orders assigned" text="Orders #3492 and #3495 have been assigned to Kira Jones. ETA: 25 min." />, followUps: ["Show driver status", "Show all orders"] },
   notify:  { text: null, card: () => <AlertCard type="success" icon="check_circle" title="Customers notified" text="Delay notifications sent for orders #3480 and #3485 with updated ETAs." />, followUps: ["Show late orders", "Show today's stats"] },
   greeting: { text: "Hey! I'm your Operations AI. I help you track orders, manage drivers, optimize routes, and keep deliveries on time. What do you need?", followUps: ["Today's overview", "Show driver status", "Any late orders?"] },
@@ -112,6 +125,7 @@ const CONFIG = {
     { keys: ["ok", "okay", "got it", "thanks", "thank you", "cool"],       reply: "ack" },
     { keys: ["hello", "hi", "hey", "good morning"],                         reply: "greeting" },
     { keys: ["help", "what can you"],                                        reply: "help" },
+    { keys: ["all orders", "show orders", "order list", "active orders"],    reply: "orders" },
     { keys: ["assign", "give to kira", "assign both"],                      reply: "assign" },
     { keys: ["notify", "tell customer", "notify customer"],                  reply: "notify" },
     { keys: ["late", "delayed", "behind", "running late"],                   reply: "late" },
@@ -127,6 +141,6 @@ const CONFIG = {
   ],
 };
 
-export default function OperationsChat({ onBack }: { onBack: () => void }) {
-  return <BaseAgentChat config={CONFIG} onBack={onBack} />;
+export default function OperationsChat({ onBack, onClose, onEditProfile, nameOverride, avatarOverride, gradientOverride, onStatusChange }: { onBack: () => void; onClose?: () => void; onEditProfile?: () => void; nameOverride?: string; avatarOverride?: string; gradientOverride?: string; onStatusChange?: (s: { isTyping: boolean; lastMsg?: string }) => void }) {
+  return <BaseAgentChat config={CONFIG} onBack={onBack} onClose={onClose} onEditProfile={onEditProfile} nameOverride={nameOverride} avatarOverride={avatarOverride} gradientOverride={gradientOverride} onStatusChange={onStatusChange} />;
 }
