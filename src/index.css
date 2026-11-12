@@ -16,8 +16,12 @@ body { font-family: "Avenir", "Nunito", system-ui, sans-serif; -webkit-font-smoo
 .btn-press { transition: transform 0.15s ease, opacity 0.15s ease; }
 .btn-press:active { transform: scale(0.97); }
 
-/* Scrollbar */
+/* Scrollbar — hidden by default, visible on hover, overlay so no gutter */
+.scroll-subtle { scrollbar-width: thin; scrollbar-color: transparent transparent; overflow-y: auto !important; }
+.scroll-subtle:hover { scrollbar-color: rgba(0,0,0,0.12) transparent; }
+@supports (overflow: overlay) { .scroll-subtle { overflow-y: overlay !important; } }
 .scroll-subtle::-webkit-scrollbar { width: 6px; }
 .scroll-subtle::-webkit-scrollbar-track { background: transparent; }
-.scroll-subtle::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
+.scroll-subtle::-webkit-scrollbar-thumb { background: transparent; border-radius: 3px; transition: background 0.2s; }
+.scroll-subtle:hover::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); }
 .scroll-subtle::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }

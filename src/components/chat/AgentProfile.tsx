@@ -65,7 +65,7 @@ export default function AgentProfile({ customization, onChange, onBack }: {
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "pushIn 280ms cubic-bezier(0.16,1,0.3,1) both" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", padding: "14px 14px", flexShrink: 0 }}>
-        <button onClick={onBack} style={{ width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "none", background: "transparent", cursor: "pointer", borderRadius: 99, transition: "background 0.12s" }}
+        <button title="Back" onClick={onBack} style={{ width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "none", background: "transparent", cursor: "pointer", borderRadius: 99, transition: "background 0.12s" }}
           onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
           onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
         >

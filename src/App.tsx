@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ThemeProvider, useTheme } from "./lib/ThemeContext";
 import Navbar from "./components/TopBar";
 import ChatShell, { type Layout } from "./components/chat/ChatShell";
@@ -10,24 +10,26 @@ function AppInner() {
   const t = useTheme();
   const [chatOpen, setChatOpen] = useState(false);
   const [deepLinkAgent, setDeepLinkAgent] = useState<string | undefined>();
-  const [chatLayout, setChatLayout] = useState<Layout>("A");
+  const [chatLayout, setChatLayout] = useState<Layout>("B");
   const [fabHovered, setFabHovered] = useState(false);
   const [notifications, setNotifications] = useState<Notif[]>([]);
   const notifIdRef = useRef(0);
-  const notifFiredRef = useRef(false); // fire only once per session
+  const chatOpenRef = useRef(chatOpen);
+  useEffect(() => { chatOpenRef.current = chatOpen; }, [chatOpen]);
 
-  // Simulate incoming notifications — only once, when chat has never been opened
-  useEffect(() => {
-    if (chatOpen || notifFiredRef.current) return;
-    notifFiredRef.current = true;
-    const t1 = setTimeout(() => {
-      setNotifications(prev => [...prev, { id: ++notifIdRef.current, arrivedAt: Date.now(), avatar: "/marketing-manager-logo.svg", text: "Your campaigns are ready for review — 2 pending.", agent: "Marketing AI", agentId: "marketing", time: "Just now" }]);
-    }, 3000);
-    const t2 = setTimeout(() => {
-      setNotifications(prev => [...prev, { id: ++notifIdRef.current, arrivedAt: Date.now(), avatar: "/ai-avatar-circle.svg", text: "Order #3480 is running 15 min late. Reassign?", agent: "Operations AI", agentId: "operations", time: "Just now" }]);
-    }, 5500);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, [chatOpen]);
+  // ChatShell fires this when an agent sends a message
+  const handleIncomingMessage = useCallback((msg: { agentId: string; agentName: string; avatar: string; text: string }) => {
+    if (chatOpenRef.current) return; // only show pills when chat is closed
+    setNotifications(prev => [...prev, {
+      id: ++notifIdRef.current,
+      arrivedAt: Date.now(),
+      avatar: msg.avatar,
+      text: msg.text,
+      agent: msg.agentName,
+      agentId: msg.agentId,
+      time: "Just now",
+    }]);
+  }, []);
 
   function dismissNotif(id: number) {
     setNotifications(prev => prev.filter(n => n.id !== id));
@@ -45,44 +47,21 @@ function AppInner() {
     setNotifications([]);
   }
 
-  const now = Date.now();
-  const anyRecent = notifications.some(n => now - n.arrivedAt < 8000);
-  const pillsVisible = fabHovered || anyRecent;
+  const [pillsHovered, setPillsHovered] = useState(false);
+  const pillsVisible = fabHovered || pillsHovered;
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: t.bg, transition: "background 300ms ease" }}>
       <Navbar unreadCount={notifications.length} />
 
       {/* Main area */}
-      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-        <div style={{ textAlign: "center", maxWidth: 480 }}>
-          <img src="/marketing-manager-logo.svg" alt="" width={64} height={64} style={{ display: "block", margin: "0 auto 20px", objectFit: "contain" }} />
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: t.text, letterSpacing: "-0.03em", margin: "0 0 8px" }}>
-            Shipday Chat
-          </h1>
-          <p style={{ fontSize: 16, color: t.textMuted, margin: "0 0 28px", lineHeight: "150%" }}>
-            Talk to your AI agents — create campaigns, manage orders, and grow your business.
-          </p>
-          <button
-            onClick={openChat}
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              height: 48, padding: "0 28px", borderRadius: 12, border: "none",
-              background: t.accent, color: "#FFFFFF", fontSize: 15, fontWeight: 600,
-              cursor: "pointer", fontFamily: "inherit", transition: "opacity 120ms ease",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
-          >
-            <Icon name="chat" size={18} color="#FFFFFF" />
-            Open chat
-          </button>
-        </div>
-      </main>
+      <main style={{ flex: 1, overflow: "hidden" }} />
 
-      {/* Stacking notification pills */}
+      {/* Stacking notification pills — visible on FAB hover or pills hover */}
       {!chatOpen && notifications.length > 0 && (
         <div
+          onMouseEnter={() => setPillsHovered(true)}
+          onMouseLeave={() => setPillsHovered(false)}
           style={{
             position: "fixed", bottom: 96, right: 24, zIndex: 999,
             display: "flex", flexDirection: "column", gap: 8,
@@ -103,7 +82,7 @@ function AppInner() {
                 background: t.mode === "dark" ? "#262626" : "#1A1A1A",
                 cursor: "pointer",
                 boxShadow: "0 8px 32px rgba(0,0,0,0.24)",
-                animation: `fadeUp 0.3s cubic-bezier(0.16,1,0.3,1) ${i * 0.08}s both`,
+                animation: `fadeUp 0.3s cubic-bezier(0.16,1,0.3,1) ${i * 0.06}s both`,
               }}
             >
               <img src={n.avatar} alt="" width={30} height={30} style={{ display: "block", borderRadius: "50%", objectFit: "contain", flexShrink: 0 }} />
@@ -160,6 +139,7 @@ function AppInner() {
         deepLinkAgent={deepLinkAgent}
         layout={chatLayout}
         onLayoutChange={setChatLayout}
+        onIncomingMessage={handleIncomingMessage}
       />
 
       {/* A/B layout pill — fixed bottom-left */}
