@@ -41,11 +41,6 @@ function AppInner() {
     setChatOpen(true);
   }
 
-  function openChat() {
-    setDeepLinkAgent(undefined);
-    setChatOpen(true);
-    setNotifications([]);
-  }
 
   const [pillsHovered, setPillsHovered] = useState(false);
   const pillsVisible = fabHovered || pillsHovered;

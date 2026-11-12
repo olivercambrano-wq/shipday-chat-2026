@@ -159,7 +159,7 @@ function TypingDots({ color }: { color: string }) {
   );
 }
 
-function AgentList({ onSelect, onClose, customizations, agentStatuses, panelSize, onCycleSize }: { onSelect: (id: string) => void; onClose: () => void; customizations: Record<string, AgentCustomization>; agentStatuses: Record<string, AgentStatus>; panelSize?: string; onCycleSize?: () => void }) {
+function AgentList({ onSelect, onClose, customizations, agentStatuses, panelSize, onCycleSize }: { onSelect: (id: string) => void; onClose?: () => void; customizations: Record<string, AgentCustomization>; agentStatuses: Record<string, AgentStatus>; panelSize?: string; onCycleSize?: () => void }) {
   const t = useTheme();
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -598,7 +598,7 @@ const CUSTOMERS: { name: string; msg: string; time: string; unread: boolean; typ
   { name: "Maria Garcia", msg: "My order arrived cold, very disappointed", time: "Yesterday", unread: false, type: "review", rating: 2, review: { orderId: "#5588991448590", placedAt: "Nov 9 at 8:15 PM", deliveredAt: "Nov 9 at 9:22 PM", total: "$42.00", food: 2, driver: 1, comment: "My order arrived cold, very disappointed. The driver seemed lost." } },
 ];
 
-function TeamView({ onSelectPerson, onClose, readPersons, panelSize, onCycleSize }: { onSelectPerson: (p: { name: string; initials: string }) => void; onClose: () => void; readPersons: Set<string>; panelSize?: string; onCycleSize?: () => void }) {
+function TeamView({ onSelectPerson, onClose, readPersons, panelSize, onCycleSize, activePersonName: _apn }: { onSelectPerson: (p: { name: string; initials: string }) => void; onClose?: () => void; readPersons: Set<string>; panelSize?: string; onCycleSize?: () => void; activePersonName?: string | null }) {
   const t = useTheme();
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -677,8 +677,7 @@ function CustomerRow({ c, isUnread, isActive, onClick }: { c: typeof CUSTOMERS[0
   );
 }
 
-function CustomersView({ onSelectPerson, onClose, readPersons, panelSize, onCycleSize, activePersonName }: { onSelectPerson: (p: { name: string; initials: string }) => void; onClose: () => void; readPersons: Set<string>; panelSize?: string; onCycleSize?: () => void; activePersonName?: string | null }) {
-  const t = useTheme();
+function CustomersView({ onSelectPerson, onClose, readPersons, panelSize, onCycleSize, activePersonName }: { onSelectPerson: (p: { name: string; initials: string }) => void; onClose?: () => void; readPersons: Set<string>; panelSize?: string; onCycleSize?: () => void; activePersonName?: string | null }) {
   const reviews = CUSTOMERS.filter(c => c.type === "review");
   const support = CUSTOMERS.filter(c => c.type === "support");
   const reviewUnread = reviews.filter(c => c.unread && !readPersons.has(c.name)).length;
@@ -897,7 +896,7 @@ function NewMessageView({ onSelectAgent, onSelectPerson, onBack }: {
 
 export { type Layout };
 
-export default function ChatShell({ open, onClose, deepLinkAgent, layout = "A", onLayoutChange, onIncomingMessage }: { open: boolean; onClose: () => void; deepLinkAgent?: string; layout?: Layout; onLayoutChange?: (l: Layout) => void; onIncomingMessage?: (msg: { agentId: string; agentName: string; avatar: string; text: string }) => void }) {
+export default function ChatShell({ open, onClose, deepLinkAgent, layout = "A", onLayoutChange: _, onIncomingMessage }: { open: boolean; onClose: () => void; deepLinkAgent?: string; layout?: Layout; onLayoutChange?: (l: Layout) => void; onIncomingMessage?: (msg: { agentId: string; agentName: string; avatar: string; text: string }) => void }) {
   const t = useTheme();
   const [tab, setTab] = useState<Tab>(layout === "A" ? "agents" : "inbox");
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
@@ -1170,7 +1169,7 @@ export default function ChatShell({ open, onClose, deepLinkAgent, layout = "A", 
             {tab === "team" && (
               activePerson
                 ? <div key={`team-${activePerson.name}`} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "pushIn 280ms cubic-bezier(0.16,1,0.3,1) both" }}><SimpleChat person={activePerson} onBack={() => setActivePerson(null)} onClose={onClose} extraActions={<IconBtn icon="open_in_full" label={panelSize === "compact" ? "Expand" : "Full view"} onClick={cycleSize} size={18} />} /></div>
-                : <div key="team-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><TeamView onSelectPerson={openPerson} onClose={onClose} readPersons={readPersons} panelSize={panelSize} onCycleSize={cycleSize} activePersonName={activePerson?.name} /></div>
+                : <div key="team-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><TeamView onSelectPerson={openPerson} onClose={onClose} readPersons={readPersons} panelSize={panelSize} onCycleSize={cycleSize} /></div>
             )}
             {tab === "inbox" && (
               composing
@@ -1181,12 +1180,12 @@ export default function ChatShell({ open, onClose, deepLinkAgent, layout = "A", 
                 ? <div key={`inbox-agent-${activeAgent}`} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "pushIn 280ms cubic-bezier(0.16,1,0.3,1) both" }}><AgentChat agentId={activeAgent} onBack={() => setActiveAgent(null)} onClose={onClose} onEditProfile={() => setEditingAgent(activeAgent)} customization={agentCustom[activeAgent]} onStatusChange={s => handleAgentStatus(activeAgent, s)} extraActions={<IconBtn icon="open_in_full" label={panelSize === "compact" ? "Expand" : "Full view"} onClick={cycleSize} size={18} />} /></div>
                 : activePerson
                 ? <div key={`inbox-team-${activePerson.name}`} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "pushIn 280ms cubic-bezier(0.16,1,0.3,1) both" }}><SimpleChat person={activePerson} onBack={() => setActivePerson(null)} onClose={onClose} reviewData={getReviewData(activePerson.name)} extraActions={<IconBtn icon="open_in_full" label={panelSize === "compact" ? "Expand" : "Full view"} onClick={cycleSize} size={18} />} /></div>
-                : <div key="inbox-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><InboxView onSelectAgent={openAgent} onSelectPerson={openPerson} onCompose={() => setComposing(true)} onClose={onClose} customizations={agentCustom} agentStatuses={agentStatuses} readPersons={readPersons} panelSize={panelSize} onCycleSize={cycleSize} activeAgentId={activeAgent} activePersonName={activePerson?.name} /></div>
+                : <div key="inbox-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><InboxView onSelectAgent={openAgent} onSelectPerson={openPerson} onCompose={() => setComposing(true)} onClose={onClose} customizations={agentCustom} agentStatuses={agentStatuses} readPersons={readPersons} panelSize={panelSize} onCycleSize={cycleSize} activeAgentId={activeAgent} /></div>
             )}
             {tab === "customers" && (
               activePerson
                 ? <div key={`cust-${activePerson.name}`} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "pushIn 280ms cubic-bezier(0.16,1,0.3,1) both" }}><SimpleChat person={activePerson} onBack={() => setActivePerson(null)} onClose={onClose} reviewData={getReviewData(activePerson.name)} /></div>
-                : <div key="cust-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><CustomersView onSelectPerson={openPerson} onClose={onClose} readPersons={readPersons} panelSize={panelSize} onCycleSize={cycleSize} activePersonName={activePerson?.name} /></div>
+                : <div key="cust-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><CustomersView onSelectPerson={openPerson} onClose={onClose} readPersons={readPersons} panelSize={panelSize} onCycleSize={cycleSize} /></div>
             )}
           </div>
         )}

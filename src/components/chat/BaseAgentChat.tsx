@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useTheme, type Theme } from "../../lib/ThemeContext";
+import { useTheme } from "../../lib/ThemeContext";
 import Icon from "../ui/Icon";
 
 function IconBtn({ icon, label, onClick, size = 22 }: { icon: string; label: string; onClick: () => void; size?: number }) {

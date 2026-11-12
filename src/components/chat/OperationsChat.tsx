@@ -1,7 +1,6 @@
 import React from "react";
 import BaseAgentChat, { StatsRow, AlertCard, type Reply } from "./BaseAgentChat";
 import { useTheme } from "../../lib/ThemeContext";
-import Icon from "../ui/Icon";
 
 // ── Custom cards ──────────────────────────────────────────────────────────
 
@@ -141,6 +140,6 @@ const CONFIG = {
   ],
 };
 
-export default function OperationsChat({ onBack, onClose, onEditProfile, nameOverride, avatarOverride, gradientOverride, onStatusChange, extraActions }: { onBack: () => void; onClose?: () => void; onEditProfile?: () => void; nameOverride?: string; avatarOverride?: string; gradientOverride?: string; onStatusChange?: (s: { isTyping: boolean; lastMsg?: string }) => void; extraActions?: React.ReactNode }) {
+export default function OperationsChat({ onBack, onClose, onEditProfile, nameOverride, avatarOverride, gradientOverride, onStatusChange, extraActions }: { onBack?: () => void; onClose?: () => void; onEditProfile?: () => void; nameOverride?: string; avatarOverride?: string; gradientOverride?: string; onStatusChange?: (s: { isTyping: boolean; lastMsg?: string }) => void; extraActions?: React.ReactNode }) {
   return <BaseAgentChat config={CONFIG} onBack={onBack} onClose={onClose} onEditProfile={onEditProfile} nameOverride={nameOverride} avatarOverride={avatarOverride} gradientOverride={gradientOverride} onStatusChange={onStatusChange} extraActions={extraActions} />;
 }
