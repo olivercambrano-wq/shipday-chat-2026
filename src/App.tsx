@@ -145,7 +145,7 @@ function AppInner() {
         background: t.surface,
         boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
       }}>
-        {(["A", "B"] as Layout[]).map(l => (
+        {(["A", "B", "C"] as Layout[]).map(l => (
           <button key={l} onClick={() => setChatLayout(l)}
             style={{
               padding: "6px 14px", border: "none", fontSize: 13, fontWeight: 700,

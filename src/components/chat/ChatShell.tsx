@@ -42,7 +42,7 @@ function IconBtn({ icon, label, onClick, size = 22 }: { icon: string; label: str
 }
 
 type Tab = "agents" | "team" | "customers" | "inbox";
-type Layout = "A" | "B";
+type Layout = "A" | "B" | "C";
 
 const TABS_A: { key: Tab; icon: string; label: string }[] = [
   { key: "agents",    icon: "auto_awesome", label: "Agents" },
@@ -1071,6 +1071,7 @@ export default function ChatShell({ open, onClose, deepLinkAgent, layout = "A", 
           width: panelSize === "full" ? "auto" : panelSize === "expanded" ? 680 : 460,
           zIndex: 1000,
           display: "flex", flexDirection: "column",
+          fontFamily: layout === "C" ? "'Google Sans Flex', system-ui, sans-serif" : "inherit",
           background: t.surface,
           borderRadius: 20,
           border: "none",
