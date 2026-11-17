@@ -53,11 +53,63 @@ function AgentAvatar({ agentId, customizations, size = 40 }: { agentId: string; 
 
 // ── Hub: Pending items + Activity ────────────────────────────────────────
 
-const PENDING_ITEMS: { agentId: string; icon: string; text: string; count: number; type: "warning" | "info" }[] = [
-  { agentId: "marketing",    icon: "campaign",     text: "campaigns pending approval",   count: 2, type: "warning" },
-  { agentId: "operations",   icon: "local_shipping", text: "orders running late",        count: 2, type: "warning" },
-  { agentId: "receptionist", icon: "phone_missed",   text: "missed calls today",         count: 6, type: "warning" },
-];
+// ── Actionable pending card ───────────────────────────────────────────────
+
+function PendingCard({ agentId, customizations, icon, title, detail, actions, onChat }: {
+  agentId: string; customizations: Record<string, AgentCustomization>;
+  icon: string; title: string; detail: string;
+  actions: { label: string; primary?: boolean }[];
+  onChat: () => void;
+}) {
+  const t = useTheme();
+  const [acted, setActed] = useState<string | null>(null);
+  if (acted) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderRadius: 12, border: `1px solid ${t.border}` }}>
+        <Icon name="check_circle" size={20} color={t.accent} fill />
+        <span style={{ fontSize: 14, fontWeight: 500, color: t.text }}>{acted}</span>
+      </div>
+    );
+  }
+  return (
+    <div style={{ padding: "14px 16px", borderRadius: 12, border: `1px solid ${t.border}`, display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: t.accentLight, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Icon name={icon} size={18} color={t.accent} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: t.text }}>{title}</div>
+        </div>
+        <AgentAvatar agentId={agentId} customizations={customizations} size={24} />
+      </div>
+      <div style={{ fontSize: 14, color: t.textSecondary, lineHeight: "20px", padding: "8px 10px", borderRadius: 10, background: t.bgTertiary }}>{detail}</div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {actions.map(a => (
+          <button key={a.label} onClick={() => setActed(a.label === "Approve" ? "Campaign approved" : a.label === "Reassign" ? "Orders reassigned to Kira" : a.label === "Enable" ? "Auto-response enabled" : a.label)} style={{
+            height: 34, padding: "0 16px", borderRadius: 12, border: a.primary ? "none" : `1px solid ${t.border}`,
+            background: a.primary ? t.accent : "transparent", fontSize: 14, fontWeight: 600,
+            color: a.primary ? "#FFFFFF" : t.text, cursor: "pointer", fontFamily: "inherit",
+            transition: "opacity 120ms ease",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+          >{a.label}</button>
+        ))}
+        <button onClick={onChat} style={{
+          height: 34, padding: "0 12px", borderRadius: 12, border: "none",
+          background: "transparent", fontSize: 13, fontWeight: 500,
+          color: t.textMuted, cursor: "pointer", fontFamily: "inherit",
+          transition: "color 120ms ease", marginLeft: "auto",
+        }}
+          onMouseEnter={e => { e.currentTarget.style.color = t.text; }}
+          onMouseLeave={e => { e.currentTarget.style.color = t.textMuted; }}
+        >Open chat →</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Activity item ────────────────────────────────────────────────────────
 
 const ACTIVITY_ITEMS: { agentId: string; text: string; time: string }[] = [
   { agentId: "marketing",    text: "Drafted a weekend SMS campaign for 1,240 subscribers", time: "2 min ago" },
@@ -66,6 +118,8 @@ const ACTIVITY_ITEMS: { agentId: string; text: string; time: string }[] = [
   { agentId: "marketing",    text: "Created coupon code WEEKEND20 — 20% off",              time: "1h ago" },
   { agentId: "operations",   text: "Notified customers about delayed orders #3480, #3485", time: "1h ago" },
 ];
+
+// ── Hub ──────────────────────────────────────────────────────────────────
 
 function AIHub({ customizations, onSelectAgent, onClose, onExpand }: {
   customizations: Record<string, AgentCustomization>;
@@ -86,50 +140,55 @@ function AIHub({ customizations, onSelectAgent, onClose, onExpand }: {
       </div>
 
       <div className="scroll-subtle" style={{ flex: 1, overflow: "auto", padding: "0 16px 20px" }}>
-        {/* Pending items */}
+        {/* Actionable pending items */}
         <div style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", padding: "0 6px 10px" }}>Needs your attention</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {PENDING_ITEMS.map((item, i) => {
-              const agent = AGENTS.find(a => a.id === item.agentId)!;
-              const custom = customizations[item.agentId];
-              return (
-                <button key={i} onClick={() => onSelectAgent(item.agentId)} style={{
-                  display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12,
-                  border: "none", background: t.bgTertiary, cursor: "pointer", fontFamily: "inherit", textAlign: "left",
-                  transition: "background 120ms ease", width: "100%",
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = t.bgTertiary; }}
-                >
-                  <AgentAvatar agentId={item.agentId} customizations={customizations} size={36} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 500, color: t.text }}>
-                      <span style={{ fontWeight: 700 }}>{item.count}</span> {item.text}
-                    </div>
-                    <div style={{ fontSize: 13, color: t.textMuted, marginTop: 1 }}>{custom?.name ?? agent.name}</div>
-                  </div>
-                  <Icon name="chevron_right" size={20} color={t.textMuted} />
-                </button>
-              );
-            })}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <PendingCard
+              agentId="marketing" customizations={customizations} icon="sms"
+              title="Weekend special — SMS campaign"
+              detail="Craving something delicious? Get 20% off this weekend only. Order now →"
+              actions={[{ label: "Approve", primary: true }]}
+              onChat={() => onSelectAgent("marketing")}
+            />
+            <PendingCard
+              agentId="marketing" customizations={customizations} icon="pageview"
+              title="Order direct — Tracking page promo"
+              detail="Skip the fees — order directly from us and save!"
+              actions={[{ label: "Approve", primary: true }]}
+              onChat={() => onSelectAgent("marketing")}
+            />
+            <PendingCard
+              agentId="operations" customizations={customizations} icon="local_shipping"
+              title="2 orders running late"
+              detail="Orders #3480 and #3485 are 10+ min behind schedule. Kira Jones is available."
+              actions={[{ label: "Reassign", primary: true }, { label: "Notify customers" }]}
+              onChat={() => onSelectAgent("operations")}
+            />
+            <PendingCard
+              agentId="receptionist" customizations={customizations} icon="phone_missed"
+              title="6 missed calls — 3 in the last hour"
+              detail="Missed calls will keep piling up. Enable auto-response to capture customer intent."
+              actions={[{ label: "Enable", primary: true }, { label: "View calls" }]}
+              onChat={() => onSelectAgent("receptionist")}
+            />
           </div>
         </div>
 
         {/* Recent activity */}
-        <div>
+        <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", padding: "0 6px 10px" }}>Recent activity</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {ACTIVITY_ITEMS.map((item, i) => (
               <button key={i} onClick={() => onSelectAgent(item.agentId)} style={{
-                display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 14px", borderRadius: 10,
+                display: "flex", alignItems: "flex-start", gap: 10, padding: "10px 14px", borderRadius: 10,
                 border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
                 transition: "background 120ms ease", width: "100%",
               }}
                 onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
               >
-                <AgentAvatar agentId={item.agentId} customizations={customizations} size={28} />
+                <AgentAvatar agentId={item.agentId} customizations={customizations} size={24} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, color: t.text, lineHeight: "20px" }}>{item.text}</div>
                   <div style={{ fontSize: 12, color: t.textMuted, marginTop: 2 }}>{item.time}</div>
@@ -140,8 +199,8 @@ function AIHub({ customizations, onSelectAgent, onClose, onExpand }: {
         </div>
 
         {/* Agent rows — quick access */}
-        <div style={{ marginTop: 20, borderTop: `1px solid ${t.border}`, paddingTop: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", padding: "0 6px 10px" }}>Your agents</div>
+        <div style={{ borderTop: `1px solid ${t.border}`, paddingTop: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", padding: "0 6px 10px" }}>Chat with your agents</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {AGENTS.map(agent => {
               const custom = customizations[agent.id];
@@ -175,15 +234,15 @@ function AIHub({ customizations, onSelectAgent, onClose, onExpand }: {
 
 // ── Agent chat wrapper ───────────────────────────────────────────────────
 
-function AgentChat({ agentId, onBack, onClose, onEditProfile, customization, onStatusChange, extraActions }: {
+function AgentChat({ agentId, onBack, onClose, onEditProfile, customization, onStatusChange, extraActions, autoSendMessage }: {
   agentId: string; onBack?: () => void; onClose?: () => void; onEditProfile: () => void;
   customization?: AgentCustomization; onStatusChange?: (s: { isTyping: boolean; lastMsg?: string }) => void;
-  extraActions?: React.ReactNode;
+  extraActions?: React.ReactNode; autoSendMessage?: string | null;
 }) {
   const hasCustomAvatar = customization?.avatarId && customization.avatarId !== "default";
   const avatarSrc = hasCustomAvatar ? getAvatarSrc(customization!.avatarId) : undefined;
   const gradient = hasCustomAvatar ? getGradient(customization!.colorId) : undefined;
-  const props = { onBack, onClose, onEditProfile, nameOverride: customization?.name, avatarOverride: avatarSrc, gradientOverride: gradient, onStatusChange, extraActions };
+  const props = { onBack, onClose, onEditProfile, nameOverride: customization?.name, avatarOverride: avatarSrc, gradientOverride: gradient, onStatusChange, extraActions, autoSendMessage };
   if (agentId === "marketing") return <MarketingChat {...props} />;
   if (agentId === "operations") return <OperationsChat {...props} />;
   if (agentId === "receptionist") return <ReceptionistChat {...props} />;
@@ -200,6 +259,7 @@ export default function AIComposer() {
   const [editingAgent, setEditingAgent] = useState<string | null>(null);
   const [barFocused, setBarFocused] = useState(false);
   const [barValue, setBarValue] = useState("");
+  const [pendingMsg, setPendingMsg] = useState<string | null>(null);
 
   const [agentCustom, setAgentCustom] = useState<Record<string, AgentCustomization>>({
     marketing:    { name: "Marketing AI",    colorId: "pink",   avatarId: "square" },
@@ -262,6 +322,7 @@ export default function AIComposer() {
   function handleBarSubmit() {
     const msg = barValue.trim();
     if (!msg) { setOpen(true); return; }
+    setPendingMsg(msg);
     // Simple routing: check keywords
     if (/campaign|sms|market|coupon|flyer|budget/i.test(msg)) openAgent("marketing");
     else if (/order|driver|late|deliver|route|assign/i.test(msg)) openAgent("operations");
@@ -272,10 +333,13 @@ export default function AIComposer() {
 
   return (
     <>
-      {/* ── Floating composer bar ── */}
+      {/* ── Floating composer bar — hidden when panel is open ── */}
       <div style={{
-        position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 997,
+        position: "fixed", bottom: 24, left: "50%", zIndex: 997,
         display: "flex", alignItems: "center", gap: 2,
+        transform: open ? "translateX(-50%) translateY(20px) scale(0.95)" : "translateX(-50%)",
+        opacity: open ? 0 : 1,
+        pointerEvents: open ? "none" : "auto",
         padding: "6px 8px 6px 16px",
         borderRadius: 99,
         background: t.surface,
@@ -283,14 +347,14 @@ export default function AIComposer() {
         boxShadow: barFocused
           ? `0 8px 32px rgba(0,0,0,0.12), 0 0 0 3px ${t.mode === "dark" ? "rgba(0,128,98,0.15)" : "rgba(0,128,98,0.08)"}`
           : "0 8px 32px rgba(0,0,0,0.12)",
-        transition: "border-color 0.2s, box-shadow 0.2s",
+        transition: "border-color 0.2s, box-shadow 0.2s, transform 300ms cubic-bezier(0.16,1,0.3,1), opacity 250ms ease",
         maxWidth: 480, width: "90vw",
       }}>
         <Icon name="auto_awesome" size={20} color={t.accent} fill style={{ flexShrink: 0 }} />
         <input
           value={barValue}
           onChange={e => setBarValue(e.target.value)}
-          onFocus={() => { setBarFocused(true); if (!open) setOpen(true); }}
+          onFocus={() => setBarFocused(true)}
           onBlur={() => setBarFocused(false)}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleBarSubmit(); } }}
           placeholder="Ask anything to your agents"
@@ -317,11 +381,11 @@ export default function AIComposer() {
       {/* ── Panel ── */}
       <div style={{
         position: "fixed",
-        bottom: 84,
+        top: expanded ? 12 : 76,
+        bottom: 16,
         left: "50%",
-        transform: open ? "translateX(-50%) translateY(0) scale(1)" : "translateX(-50%) translateY(12px) scale(0.97)",
+        transform: open ? "translateX(-50%) scale(1)" : "translateX(-50%) translateY(12px) scale(0.97)",
         width: expanded ? "min(92vw, 900px)" : 480,
-        maxHeight: expanded ? "calc(100vh - 120px)" : 560,
         zIndex: 996,
         display: "flex", flexDirection: "column",
         background: t.surface,
@@ -329,7 +393,7 @@ export default function AIComposer() {
         boxShadow: "0 16px 64px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06)",
         overflow: "hidden",
         opacity: open ? 1 : 0,
-        transition: "transform 380ms cubic-bezier(0.16,1,0.3,1), opacity 280ms ease, width 320ms cubic-bezier(0.16,1,0.3,1), max-height 320ms cubic-bezier(0.16,1,0.3,1)",
+        transition: "transform 380ms cubic-bezier(0.16,1,0.3,1), opacity 280ms ease, width 320ms cubic-bezier(0.16,1,0.3,1), top 320ms cubic-bezier(0.16,1,0.3,1)",
         pointerEvents: open ? "auto" : "none",
       }}>
         {editingAgent ? (
@@ -338,11 +402,12 @@ export default function AIComposer() {
           <div key={`ai-${activeAgent}`} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "pushIn 280ms cubic-bezier(0.16,1,0.3,1) both" }}>
             <AgentChat
               agentId={activeAgent}
-              onBack={() => setActiveAgent(null)}
+              onBack={() => { setActiveAgent(null); setPendingMsg(null); }}
               onClose={() => setOpen(false)}
               onEditProfile={() => setEditingAgent(activeAgent)}
               customization={agentCustom[activeAgent]}
               onStatusChange={s => handleAgentStatus(activeAgent, s)}
+              autoSendMessage={pendingMsg}
               extraActions={
                 <IconBtn icon={expanded ? "close_fullscreen" : "open_in_full"} label={expanded ? "Collapse" : "Expand"} onClick={() => setExpanded(e => !e)} size={18} />
               }
@@ -359,7 +424,7 @@ export default function AIComposer() {
       </div>
 
       {/* Backdrop */}
-      {open && <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 995, background: "rgba(0,0,0,0.03)" }} />}
+      {open && <div onClick={() => { setOpen(false); setActiveAgent(null); setEditingAgent(null); setPendingMsg(null); }} style={{ position: "fixed", inset: 0, zIndex: 995, background: "rgba(0,0,0,0.03)" }} />}
     </>
   );
 }

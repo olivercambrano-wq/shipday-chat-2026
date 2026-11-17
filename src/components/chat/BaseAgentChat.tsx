@@ -106,7 +106,7 @@ export function AlertCard({ icon, title, text, type = "info" }: { icon: string; 
 
 // ── Base Agent Chat ───────────────────────────────────────────────────────
 
-export default function BaseAgentChat({ config, onBack, onClose, onEditProfile, nameOverride, avatarOverride, gradientOverride, onStatusChange, extraActions }: { config: AgentConfig; onBack?: () => void; onClose?: () => void; onEditProfile?: () => void; nameOverride?: string; avatarOverride?: string; gradientOverride?: string; onStatusChange?: (s: { isTyping: boolean; lastMsg?: string }) => void; extraActions?: React.ReactNode }) {
+export default function BaseAgentChat({ config, onBack, onClose, onEditProfile, nameOverride, avatarOverride, gradientOverride, onStatusChange, extraActions, autoSendMessage }: { config: AgentConfig; onBack?: () => void; onClose?: () => void; onEditProfile?: () => void; nameOverride?: string; avatarOverride?: string; gradientOverride?: string; onStatusChange?: (s: { isTyping: boolean; lastMsg?: string }) => void; extraActions?: React.ReactNode; autoSendMessage?: string | null }) {
   const t = useTheme();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>(config.initialMessages ?? []);
@@ -169,6 +169,15 @@ export default function BaseAgentChat({ config, onBack, onClose, onEditProfile, 
       statusRef.current?.({ isTyping: false, ...(reply.text ? { lastMsg: reply.text, lastTime: nowTime() } : {}) });
     }, 900);
   }, [input, config, addReply, addUserMsg]);
+
+  // Auto-send message from composer bar
+  const autoSentRef = useRef(false);
+  useEffect(() => {
+    if (autoSendMessage && !autoSentRef.current) {
+      autoSentRef.current = true;
+      setTimeout(() => handleSend(autoSendMessage), 100);
+    }
+  }, [autoSendMessage, handleSend]);
 
   // Auto-scroll
   useEffect(() => {

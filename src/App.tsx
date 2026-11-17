@@ -138,8 +138,8 @@ function AppInner() {
         onIncomingMessage={handleIncomingMessage}
       />
 
-      {/* AI Composer — floating bar + panel */}
-      <AIComposer />
+      {/* AI Composer — only in Layout B */}
+      {chatLayout === "B" && <AIComposer />}
 
       {/* A/B layout pill — fixed bottom-left */}
       <div style={{

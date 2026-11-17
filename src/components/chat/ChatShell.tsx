@@ -110,15 +110,22 @@ function CollapsibleSection({ title, count, badge, defaultOpen = true, children 
   );
 }
 
-function PersonAvatar({ name, avatar, size = 40, online }: { name: string; avatar?: string; size?: number; online?: boolean }) {
+function PersonAvatar({ name, avatar, size = 40, online, isGroup }: { name: string; avatar?: string; size?: number; online?: boolean; isGroup?: boolean }) {
   const t = useTheme();
   const initials = name.split(" ").map(n => n[0]).join("");
+  if (isGroup) {
+    return (
+      <div style={{ width: size, height: size, borderRadius: "50%", background: t.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Icon name="group" size={size * 0.5} color="#FFFFFF" />
+      </div>
+    );
+  }
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       {avatar ? (
         <img src={avatar} alt="" width={size} height={size} style={{ display: "block", borderRadius: "50%", objectFit: "cover" }} />
       ) : (
-        <div style={{ width: size, height: size, borderRadius: "50%", background: t.bgTertiary, display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.35, fontWeight: 700, color: t.textSecondary }}>
+        <div style={{ width: size, height: size, borderRadius: "50%", background: t.mode === "dark" ? "#2A2A2A" : "#EEECEA", display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.35, fontWeight: 700, color: t.textSecondary }}>
           {initials}
         </div>
       )}
@@ -129,7 +136,7 @@ function PersonAvatar({ name, avatar, size = 40, online }: { name: string; avata
 
 // ── Agent list ────────────────────────────────────────────────────────────
 
-function ListHeader({ title, onClose, panelSize, onCycleSize }: { title: string; onClose?: () => void; panelSize?: string; onCycleSize?: () => void }) {
+function ListHeader({ title, onClose, panelSize, onCycleSize, onCompose }: { title: string; onClose?: () => void; panelSize?: string; onCycleSize?: () => void; onCompose?: () => void }) {
   const t = useTheme();
   const icon = panelSize === "full" ? "close_fullscreen" : "open_in_full";
   const label = panelSize === "full" ? "Collapse" : panelSize === "expanded" ? "Full view" : "Expand";
@@ -137,8 +144,9 @@ function ListHeader({ title, onClose, panelSize, onCycleSize }: { title: string;
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 16px 16px 22px", flexShrink: 0 }}>
       <span style={{ fontSize: 18, fontWeight: 700, color: t.text, letterSpacing: "-0.02em" }}>{title}</span>
-      {hasActions && (
+      {(hasActions || onCompose) && (
         <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {onCompose && <IconBtn icon="edit_square" label="New message" onClick={onCompose} size={20} />}
           {onCycleSize && <IconBtn icon={icon} label={label} onClick={onCycleSize} size={18} />}
           {onClose && <IconBtn icon="close" label="Close" onClick={onClose} />}
         </div>
@@ -318,6 +326,20 @@ const THREADS: Record<string, { from: "me" | "them"; text: string; day?: string 
   "Michael Brown": [
     { from: "them", text: "Do you have gluten-free options? My wife has celiac.", day: "Today" },
   ],
+  "Lunch Shift Team": [
+    { from: "them", text: "Morning everyone! Busy day ahead — 15 orders already in queue.", day: "Today" },
+    { from: "me", text: "Let's split downtown and uptown. Alex takes downtown, Bella uptown." },
+    { from: "them", text: "Alex: Sounds good, I'll handle the downtown orders today" },
+    { from: "them", text: "Bella: On it! Heading to uptown now 🚗" },
+    { from: "them", text: "Kira: I can cover overflow if anyone gets backed up" },
+  ],
+  "Weekend Crew": [
+    { from: "them", text: "Bella: Who's covering Saturday evening?", day: "Yesterday" },
+    { from: "them", text: "Chris: I can do 5-9 PM" },
+    { from: "them", text: "Noah: I'll take 9 PM to close" },
+    { from: "me", text: "Perfect. Ethan, make sure the kitchen is prepped by 4:30." },
+    { from: "them", text: "Ethan: Will do, everything will be ready 👍" },
+  ],
 };
 
 function ReviewSummaryCard({ review }: { review: ReviewData }) {
@@ -402,8 +424,20 @@ function SimpleChat({ person, onBack, onClose, reviewData, hideBack, extraAction
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 20px", flexShrink: 0 }}>
         {!hideBack && <IconBtn icon="arrow_back" label="Back" onClick={onBack} size={20} />}
-        <PersonAvatar name={person.name} avatar={TEAM_MEMBERS.find(m => m.name === person.name)?.avatar} size={32} />
-        <span style={{ flex: 1, fontSize: 15, fontWeight: 500, color: t.text }}>{person.name}</span>
+        {(() => {
+          const member = TEAM_MEMBERS.find(m => m.name === person.name);
+          return (
+            <>
+              <PersonAvatar name={person.name} avatar={member?.avatar} size={32} isGroup={member?.isGroup} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 500, color: t.text }}>{person.name}</div>
+                {member?.isGroup && member.groupMembers && (
+                  <div style={{ fontSize: 12, color: t.textMuted }}>{member.groupMembers.length} members</div>
+                )}
+              </div>
+            </>
+          );
+        })()}
         {extraActions}
         {onClose && <IconBtn icon="close" label="Close" onClick={onClose} />}
       </div>
@@ -575,7 +609,7 @@ function SimpleChat({ person, onBack, onClose, reviewData, hideBack, extraAction
 
 // ── Team view ─────────────────────────────────────────────────────────────
 
-const TEAM_MEMBERS: { name: string; role: string; msg: string; time: string; online: boolean; unread: boolean; avatar?: string }[] = [
+const TEAM_MEMBERS: { name: string; role: string; msg: string; time: string; online: boolean; unread: boolean; avatar?: string; isGroup?: boolean; groupMembers?: string[] }[] = [
   { name: "Alex Carter", role: "Driver", msg: "Customer isn't answering the door. Should I leave it with the concierge?", time: "10:19 AM", online: true, unread: true, avatar: "https://i.pravatar.cc/80?img=12" },
   { name: "Bella Chong", role: "Driver", msg: "Traffic on 5th is heavy, I'll be about 10 minutes late on #3481.", time: "11:46 AM", online: true, unread: false, avatar: "https://i.pravatar.cc/80?img=5" },
   { name: "Chris Davis", role: "Driver", msg: "Can I swap Friday's shift with Liam? He already said yes.", time: "8:47 AM", online: false, unread: false },
@@ -584,6 +618,8 @@ const TEAM_MEMBERS: { name: string; role: string; msg: string; time: string; onl
   { name: "Ethan Lee", role: "Kitchen", msg: "Thanks. Fresh batch tomorrow at 11.", time: "Yesterday", online: false, unread: false },
   { name: "Liam Brooks", role: "Driver", msg: "On my way, be there in 5.", time: "Yesterday", online: true, unread: false, avatar: "https://i.pravatar.cc/80?img=53" },
   { name: "Noah Rivera", role: "Driver", msg: "Can I pick up extra shifts this week?", time: "Mon", online: false, unread: false, avatar: "https://i.pravatar.cc/80?img=14" },
+  { name: "Lunch Shift Team", role: "Group", msg: "Alex: I'll handle the downtown orders today", time: "11:30 AM", online: false, unread: true, isGroup: true, groupMembers: ["Alex Carter", "Bella Chong", "Kira Jones", "Liam Brooks"] },
+  { name: "Weekend Crew", role: "Group", msg: "Bella: Who's covering Saturday evening?", time: "Yesterday", online: false, unread: false, isGroup: true, groupMembers: ["Bella Chong", "Chris Davis", "Noah Rivera", "Ethan Lee"] },
 ];
 
 type ReviewData = { orderId: string; placedAt: string; deliveredAt: string; total: string; food: number; driver: number; comment: string };
@@ -598,11 +634,11 @@ const CUSTOMERS: { name: string; msg: string; time: string; unread: boolean; typ
   { name: "Maria Garcia", msg: "My order arrived cold, very disappointed", time: "Yesterday", unread: false, type: "review", rating: 2, review: { orderId: "#5588991448590", placedAt: "Nov 9 at 8:15 PM", deliveredAt: "Nov 9 at 9:22 PM", total: "$42.00", food: 2, driver: 1, comment: "My order arrived cold, very disappointed. The driver seemed lost." } },
 ];
 
-function TeamView({ onSelectPerson, onClose, readPersons, panelSize, onCycleSize, activePersonName: _apn }: { onSelectPerson: (p: { name: string; initials: string }) => void; onClose?: () => void; readPersons: Set<string>; panelSize?: string; onCycleSize?: () => void; activePersonName?: string | null }) {
+function TeamView({ onSelectPerson, onClose, readPersons, panelSize, onCycleSize, activePersonName: _apn, onCompose }: { onSelectPerson: (p: { name: string; initials: string }) => void; onClose?: () => void; readPersons: Set<string>; panelSize?: string; onCycleSize?: () => void; activePersonName?: string | null; onCompose?: () => void }) {
   const t = useTheme();
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <ListHeader title="Team" onClose={onClose} panelSize={panelSize} onCycleSize={onCycleSize} />
+      <ListHeader title="Team" onClose={onClose} panelSize={panelSize} onCycleSize={onCycleSize} onCompose={onCompose} />
       <div className="scroll-subtle" style={{ flex: 1, overflow: "auto", padding: "0 6px 16px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {TEAM_MEMBERS.map(c => {
@@ -616,11 +652,10 @@ function TeamView({ onSelectPerson, onClose, readPersons, panelSize, onCycleSize
                 onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
               >
-                <PersonAvatar name={c.name} avatar={c.avatar} online={c.online} />
+                <PersonAvatar name={c.name} avatar={c.avatar} online={c.online} isGroup={c.isGroup} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <span style={{ fontSize: 15, fontWeight: isUnread ? 600 : 500, color: t.text }}>{c.name}</span>
-                    <span style={{ fontSize: 13, color: t.textMuted }}>· {c.role}</span>
                   </div>
                   <div style={{ fontSize: 15, fontWeight: isUnread ? 500 : 400, color: isUnread ? t.text : t.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 1 }}>{c.msg}</div>
                 </div>
@@ -745,7 +780,7 @@ function InboxView({ onSelectPerson, onClose, onCompose, readPersons, panelSize,
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = t.surfaceHover; }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
               >
-                <PersonAvatar name={c.name} avatar={c.avatar} online={c.online} />
+                <PersonAvatar name={c.name} avatar={c.avatar} online={c.online} isGroup={c.isGroup} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: isUnread ? 600 : 500, color: t.text }}>{c.name}</div>
                   <div style={{ fontSize: 15, fontWeight: isUnread ? 500 : 400, color: isUnread ? t.text : t.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 3 }}>{c.msg}</div>
@@ -767,24 +802,105 @@ function InboxView({ onSelectPerson, onClose, onCompose, readPersons, panelSize,
 // ── New Message view (contact picker with search) ────────────────────────
 
 const ALL_CONTACTS = [
-  ...AGENTS.map(a => ({ type: "agent" as const, id: a.id, name: a.name, desc: a.desc })),
-  ...TEAM_MEMBERS.map(c => ({ type: "person" as const, id: c.name, name: c.name, desc: c.role })),
+  ...TEAM_MEMBERS.filter(c => !c.isGroup).map(c => ({ type: "person" as const, id: c.name, name: c.name, desc: "" })),
   ...CUSTOMERS.map(c => ({ type: "customer" as const, id: c.name, name: c.name, desc: "Customer" })),
 ];
 
-function NewMessageView({ onSelectAgent, onSelectPerson, onBack }: {
-  onSelectAgent: (id: string) => void;
+function NewMessageView({ onSelectPerson, onBack }: {
   onSelectPerson: (p: { name: string; initials: string }) => void;
   onBack: () => void;
 }) {
   const t = useTheme();
   const [search, setSearch] = useState("");
+  const [creatingGroup, setCreatingGroup] = useState(false);
+  const [groupName, setGroupName] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set());
   const lower = search.toLowerCase();
+  const people = ALL_CONTACTS.filter(c => c.type === "person" || c.type === "customer");
   const filtered = lower ? ALL_CONTACTS.filter(c => c.name.toLowerCase().includes(lower)) : ALL_CONTACTS;
 
   function select(c: typeof ALL_CONTACTS[0]) {
-    if (c.type === "agent") onSelectAgent(c.id);
-    else onSelectPerson({ name: c.name, initials: c.name.split(" ").map(n => n[0]).join("") });
+    onSelectPerson({ name: c.name, initials: c.name.split(" ").map(n => n[0]).join("") });
+  }
+
+  function toggleMember(name: string) {
+    setSelectedMembers(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name); else next.add(name);
+      return next;
+    });
+  }
+
+  function createGroup() {
+    const name = groupName.trim() || `Group (${selectedMembers.size})`;
+    onSelectPerson({ name, initials: name.split(" ").map(n => n[0]).join("") });
+  }
+
+  if (creatingGroup) {
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "pushIn 280ms cubic-bezier(0.16,1,0.3,1) both" }}>
+        <div style={{ padding: "18px 16px 0 16px", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+            <IconBtn icon="arrow_back" label="Back" onClick={() => setCreatingGroup(false)} size={20} />
+            <span style={{ fontSize: 18, fontWeight: 700, color: t.text, letterSpacing: "-0.02em" }}>Create group</span>
+          </div>
+          <input
+            autoFocus
+            value={groupName}
+            onChange={e => setGroupName(e.target.value)}
+            placeholder="Group name..."
+            style={{ width: "100%", border: "none", outline: "none", background: t.bgTertiary, fontSize: 15, color: t.text, fontFamily: "inherit", padding: "10px 14px", borderRadius: 12, boxSizing: "border-box", marginBottom: 12 }}
+          />
+          {selectedMembers.size > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+              {Array.from(selectedMembers).map(name => (
+                <div key={name} onClick={() => toggleMember(name)} style={{
+                  display: "flex", alignItems: "center", gap: 6, padding: "4px 10px 4px 6px",
+                  borderRadius: 99, background: t.accentLight, cursor: "pointer", fontSize: 13, fontWeight: 500, color: t.accent,
+                }}>
+                  <span>{name.split(" ")[0]}</span>
+                  <Icon name="close" size={14} color={t.accent} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="scroll-subtle" style={{ flex: 1, overflow: "auto", padding: "0 6px 16px" }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", padding: "4px 14px 8px" }}>Select members</div>
+          {people.map(c => {
+            const checked = selectedMembers.has(c.name);
+            return (
+              <button key={c.id} onClick={() => toggleMember(c.name)} style={{
+                display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12,
+                border: "none", background: checked ? t.accentLight : "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                transition: "background 120ms ease", width: "100%",
+              }}
+                onMouseEnter={e => { if (!checked) e.currentTarget.style.background = t.surfaceHover; }}
+                onMouseLeave={e => { e.currentTarget.style.background = checked ? t.accentLight : "transparent"; }}
+              >
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: t.mode === "dark" ? "#2A2A2A" : "#EEECEA", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: t.textSecondary, flexShrink: 0 }}>
+                  {c.name.split(" ").map(n => n[0]).join("")}
+                </div>
+                <span style={{ flex: 1, fontSize: 15, fontWeight: 500, color: t.text }}>{c.name}</span>
+                <Icon name={checked ? "check_circle" : "radio_button_unchecked"} size={22} color={checked ? t.accent : t.borderLight} fill={checked} />
+              </button>
+            );
+          })}
+        </div>
+        {selectedMembers.size >= 2 && (
+          <div style={{ padding: "12px 16px", flexShrink: 0 }}>
+            <button onClick={createGroup} style={{
+              width: "100%", height: 44, borderRadius: 12, border: "none",
+              background: t.accent, color: "#FFFFFF", fontSize: 15, fontWeight: 600,
+              cursor: "pointer", fontFamily: "inherit", transition: "opacity 120ms ease",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+            >Create group ({selectedMembers.size} members)</button>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -799,7 +915,7 @@ function NewMessageView({ onSelectAgent, onSelectPerson, onBack }: {
         <div style={{
           display: "flex", alignItems: "center", gap: 10,
           padding: "0 14px", height: 42, borderRadius: 12,
-          background: t.bgTertiary, marginBottom: 8,
+          background: t.bgTertiary, marginBottom: 4,
         }}>
           <span style={{ fontSize: 14, color: t.textMuted, flexShrink: 0 }}>To:</span>
           <input
@@ -814,6 +930,21 @@ function NewMessageView({ onSelectAgent, onSelectPerson, onBack }: {
 
       {/* Contact list */}
       <div className="scroll-subtle" style={{ flex: 1, overflow: "auto", padding: "4px 6px 16px" }}>
+        {/* Create group button */}
+        <button onClick={() => setCreatingGroup(true)} style={{
+          display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 12,
+          border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+          transition: "background 120ms ease", width: "100%", marginBottom: 4,
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+        >
+          <div style={{ width: 36, height: 36, borderRadius: "50%", background: t.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Icon name="group_add" size={20} color="#FFFFFF" />
+          </div>
+          <span style={{ fontSize: 15, fontWeight: 500, color: t.text }}>Create group</span>
+        </button>
+
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {filtered.map(c => (
             <button key={`${c.type}-${c.id}`} onClick={() => select(c)} style={{
@@ -824,11 +955,11 @@ function NewMessageView({ onSelectAgent, onSelectPerson, onBack }: {
               onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
             >
-              <div style={{ width: 36, height: 36, borderRadius: "50%", background: t.bgTertiary, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: t.textSecondary, flexShrink: 0 }}>
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: t.mode === "dark" ? "#2A2A2A" : "#EEECEA", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: t.textSecondary, flexShrink: 0 }}>
                 {c.name.split(" ").map(n => n[0]).join("")}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 600, color: t.text }}>{c.name}</div>
+                <div style={{ fontSize: 15, fontWeight: 500, color: t.text }}>{c.name}</div>
                 <div style={{ fontSize: 13, color: t.textMuted }}>{c.desc}</div>
               </div>
             </button>
@@ -1041,10 +1172,10 @@ export default function ChatShell({ open, onClose, deepLinkAgent, layout = "A", 
             <div style={{ width: 340, flexShrink: 0, display: "flex", flexDirection: "column", overflow: "hidden", borderRight: `1px solid ${t.border}` }}>
               <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
                 {tab === "agents" && <AgentList onSelect={openAgent} customizations={agentCustom} agentStatuses={agentStatuses} />}
-                {tab === "team" && <TeamView onSelectPerson={openPerson} readPersons={readPersons} activePersonName={activePerson?.name} />}
+                {tab === "team" && <TeamView onSelectPerson={openPerson} readPersons={readPersons} activePersonName={activePerson?.name} onCompose={() => setComposing(true)} />}
                 {tab === "inbox" && (
                   composing
-                    ? <NewMessageView onSelectAgent={id => { setComposing(false); openAgent(id); }} onSelectPerson={p => { setComposing(false); openPerson(p); }} onBack={() => setComposing(false)} />
+                    ? <NewMessageView onSelectPerson={p => { setComposing(false); openPerson(p); }} onBack={() => setComposing(false)} />
                     : <InboxView onSelectPerson={openPerson} onCompose={() => setComposing(true)} readPersons={readPersons} activePersonName={activePerson?.name} />
                 )}
                 {tab === "customers" && <CustomersView onSelectPerson={openPerson} readPersons={readPersons} activePersonName={activePerson?.name} />}
@@ -1117,13 +1248,15 @@ export default function ChatShell({ open, onClose, deepLinkAgent, layout = "A", 
                 : <div key="agent-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><AgentList onSelect={openAgent} onClose={onClose} customizations={agentCustom} agentStatuses={agentStatuses} panelSize={panelSize} onCycleSize={cycleSize} /></div>
             )}
             {tab === "team" && (
-              activePerson
+              composing
+                ? <NewMessageView onSelectPerson={p => { setComposing(false); openPerson(p); }} onBack={() => setComposing(false)} />
+                : activePerson
                 ? <div key={`team-${activePerson.name}`} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "pushIn 280ms cubic-bezier(0.16,1,0.3,1) both" }}><SimpleChat person={activePerson} onBack={() => setActivePerson(null)} onClose={onClose} extraActions={<IconBtn icon="open_in_full" label={panelSize === "compact" ? "Expand" : "Full view"} onClick={cycleSize} size={18} />} /></div>
-                : <div key="team-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><TeamView onSelectPerson={openPerson} onClose={onClose} readPersons={readPersons} panelSize={panelSize} onCycleSize={cycleSize} /></div>
+                : <div key="team-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><TeamView onSelectPerson={openPerson} onClose={onClose} readPersons={readPersons} panelSize={panelSize} onCycleSize={cycleSize} onCompose={() => setComposing(true)} /></div>
             )}
             {tab === "inbox" && (
               composing
-                ? <NewMessageView onSelectAgent={id => { setComposing(false); openAgent(id); }} onSelectPerson={p => { setComposing(false); openPerson(p); }} onBack={() => setComposing(false)} />
+                ? <NewMessageView onSelectPerson={p => { setComposing(false); openPerson(p); }} onBack={() => setComposing(false)} />
                 : editingAgent
                 ? <AgentProfile customization={agentCustom[editingAgent]} onChange={c => updateAgent(editingAgent, c)} onBack={() => setEditingAgent(null)} />
                 : activeAgent
