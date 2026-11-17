@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ThemeProvider, useTheme } from "./lib/ThemeContext";
 import Navbar from "./components/TopBar";
 import ChatShell, { type Layout } from "./components/chat/ChatShell";
+import AIComposer from "./components/ai/AIComposer";
 import Icon from "./components/ui/Icon";
 
 type Notif = { id: number; arrivedAt: number; avatar: string; text: string; agent: string; agentId: string; time: string };
@@ -137,6 +138,9 @@ function AppInner() {
         onIncomingMessage={handleIncomingMessage}
       />
 
+      {/* AI Composer — floating bar + panel */}
+      <AIComposer />
+
       {/* A/B layout pill — fixed bottom-left */}
       <div style={{
         position: "fixed", bottom: 24, left: 24, zIndex: 998,
@@ -145,7 +149,7 @@ function AppInner() {
         background: t.surface,
         boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
       }}>
-        {(["A", "B", "C"] as Layout[]).map(l => (
+        {(["A", "B"] as Layout[]).map(l => (
           <button key={l} onClick={() => setChatLayout(l)}
             style={{
               padding: "6px 14px", border: "none", fontSize: 13, fontWeight: 700,

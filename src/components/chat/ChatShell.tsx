@@ -42,7 +42,7 @@ function IconBtn({ icon, label, onClick, size = 22 }: { icon: string; label: str
 }
 
 type Tab = "agents" | "team" | "customers" | "inbox";
-type Layout = "A" | "B" | "C";
+type Layout = "A" | "B";
 
 const TABS_A: { key: Tab; icon: string; label: string }[] = [
   { key: "agents",    icon: "auto_awesome", label: "Agents" },
@@ -710,17 +710,13 @@ function CustomersView({ onSelectPerson, onClose, readPersons, panelSize, onCycl
 
 // ── Inbox view (Layout B: agents + team combined) ────────────────────────
 
-function InboxView({ onSelectAgent, onSelectPerson, onClose, onCompose, customizations, agentStatuses, readPersons, panelSize, onCycleSize, activeAgentId, activePersonName }: {
-  onSelectAgent: (id: string) => void;
+function InboxView({ onSelectPerson, onClose, onCompose, readPersons, panelSize, onCycleSize, activePersonName }: {
   onSelectPerson: (p: { name: string; initials: string }) => void;
   onClose?: () => void;
   onCompose?: () => void;
-  customizations: Record<string, AgentCustomization>;
-  agentStatuses: Record<string, AgentStatus>;
   readPersons: Set<string>;
   panelSize?: string;
   onCycleSize?: () => void;
-  activeAgentId?: string | null;
   activePersonName?: string | null;
 }) {
   const t = useTheme();
@@ -736,52 +732,6 @@ function InboxView({ onSelectAgent, onSelectPerson, onClose, onCompose, customiz
       </div>
       <div className="scroll-subtle" style={{ flex: 1, overflow: "auto", padding: "0 6px 16px" }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <CollapsibleSection title="AI Workforce" badge={Object.values(agentStatuses).filter(s => s.unread).length}>
-          {AGENTS.map(agent => {
-            const custom = customizations[agent.id];
-            const status = agentStatuses[agent.id];
-            const hasCustomAvatar = custom?.avatarId && custom.avatarId !== "default";
-            const avatarSrc = hasCustomAvatar ? getAvatarSrc(custom!.avatarId) : agent.icon;
-            const gradient = hasCustomAvatar ? getGradient(custom!.colorId) : null;
-            const subtext = status?.lastMsg ?? agent.desc;
-            const hasConversation = !!status?.lastMsg || status?.isTyping;
-            const isActive = activeAgentId === agent.id;
-            return (
-              <button key={agent.id} onClick={() => onSelectAgent(agent.id)} style={{
-                display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", borderRadius: 12,
-                border: "none", background: isActive ? t.accentLight : "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
-                transition: "background 120ms ease", width: "100%",
-              }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = t.surfaceHover; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
-              >
-                <div style={{ position: "relative", width: 40, height: 40, flexShrink: 0 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: gradient ?? "transparent", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <img src={avatarSrc} alt="" width={40} height={40} style={{ display: "block", borderRadius: "50%", mixBlendMode: gradient ? "luminosity" : "normal" }} />
-                  </div>
-                  <div style={{ position: "absolute", bottom: -1, right: -1, width: 11, height: 11, borderRadius: "50%", background: "#22C55E", border: `2px solid ${t.surface}` }} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: status?.unread ? 600 : 500, color: t.text }}>{custom?.name ?? agent.name}</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-                    {status?.isTyping ? (
-                      <>
-                        <TypingDots color={t.accent} />
-                        <span style={{ fontSize: 15, color: t.accent, fontWeight: 500 }}>Typing…</span>
-                      </>
-                    ) : (
-                      <span style={{ fontSize: 15, color: status?.unread ? t.text : t.textMuted, fontWeight: status?.unread ? 500 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{subtext}</span>
-                    )}
-                  </div>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
-                  {hasConversation && status?.lastTime && <span style={{ fontSize: 12, color: t.textMuted }}>{status.lastTime}</span>}
-                  {status?.unread && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#EF4444" }} />}
-                </div>
-              </button>
-            );
-          })}
-          </CollapsibleSection>
           <CollapsibleSection title="Team" badge={TEAM_MEMBERS.filter(c => c.unread && !readPersons.has(c.name)).length}>
           {TEAM_MEMBERS.map(c => {
             const isUnread = c.unread && !readPersons.has(c.name);
@@ -1071,7 +1021,6 @@ export default function ChatShell({ open, onClose, deepLinkAgent, layout = "A", 
           width: panelSize === "full" ? "auto" : panelSize === "expanded" ? 680 : 460,
           zIndex: 1000,
           display: "flex", flexDirection: "column",
-          fontFamily: layout === "C" ? "'Google Sans Flex', system-ui, sans-serif" : "inherit",
           background: t.surface,
           borderRadius: 20,
           border: "none",
@@ -1096,7 +1045,7 @@ export default function ChatShell({ open, onClose, deepLinkAgent, layout = "A", 
                 {tab === "inbox" && (
                   composing
                     ? <NewMessageView onSelectAgent={id => { setComposing(false); openAgent(id); }} onSelectPerson={p => { setComposing(false); openPerson(p); }} onBack={() => setComposing(false)} />
-                    : <InboxView onSelectAgent={openAgent} onSelectPerson={openPerson} onCompose={() => setComposing(true)} customizations={agentCustom} agentStatuses={agentStatuses} readPersons={readPersons} activeAgentId={activeAgent} activePersonName={activePerson?.name} />
+                    : <InboxView onSelectPerson={openPerson} onCompose={() => setComposing(true)} readPersons={readPersons} activePersonName={activePerson?.name} />
                 )}
                 {tab === "customers" && <CustomersView onSelectPerson={openPerson} readPersons={readPersons} activePersonName={activePerson?.name} />}
               </div>
@@ -1181,7 +1130,7 @@ export default function ChatShell({ open, onClose, deepLinkAgent, layout = "A", 
                 ? <div key={`inbox-agent-${activeAgent}`} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "pushIn 280ms cubic-bezier(0.16,1,0.3,1) both" }}><AgentChat agentId={activeAgent} onBack={() => setActiveAgent(null)} onClose={onClose} onEditProfile={() => setEditingAgent(activeAgent)} customization={agentCustom[activeAgent]} onStatusChange={s => handleAgentStatus(activeAgent, s)} extraActions={<IconBtn icon="open_in_full" label={panelSize === "compact" ? "Expand" : "Full view"} onClick={cycleSize} size={18} />} /></div>
                 : activePerson
                 ? <div key={`inbox-team-${activePerson.name}`} style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "pushIn 280ms cubic-bezier(0.16,1,0.3,1) both" }}><SimpleChat person={activePerson} onBack={() => setActivePerson(null)} onClose={onClose} reviewData={getReviewData(activePerson.name)} extraActions={<IconBtn icon="open_in_full" label={panelSize === "compact" ? "Expand" : "Full view"} onClick={cycleSize} size={18} />} /></div>
-                : <div key="inbox-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><InboxView onSelectAgent={openAgent} onSelectPerson={openPerson} onCompose={() => setComposing(true)} onClose={onClose} customizations={agentCustom} agentStatuses={agentStatuses} readPersons={readPersons} panelSize={panelSize} onCycleSize={cycleSize} activeAgentId={activeAgent} /></div>
+                : <div key="inbox-list" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", animation: "crossfade 200ms ease both" }}><InboxView onSelectPerson={openPerson} onCompose={() => setComposing(true)} onClose={onClose} readPersons={readPersons} panelSize={panelSize} onCycleSize={cycleSize} /></div>
             )}
             {tab === "customers" && (
               activePerson
