@@ -6,7 +6,7 @@ import OperationsChat from "../chat/OperationsChat";
 import ReceptionistChat from "../chat/ReceptionistChat";
 import AgentProfile, { type AgentCustomization, getAvatarSrc, getGradient } from "../chat/AgentProfile";
 
-// ── Types ────────────────────────────────────────────────────────────────
+// ── Constants ────────────────────────────────────────────────────────────
 
 const AGENTS = [
   { id: "marketing",    name: "Marketing AI",    icon: "/marketing-manager-logo.svg", desc: "Campaigns, SMS, coupons, print" },
@@ -16,33 +16,19 @@ const AGENTS = [
 
 type AgentStatus = { isTyping: boolean; lastMsg?: string; lastTime?: string; unread: boolean };
 
-// ── Icon Button with tooltip ─────────────────────────────────────────────
+// ── Shared: IconBtn ──────────────────────────────────────────────────────
 
 function IconBtn({ icon, label, onClick, size = 22 }: { icon: string; label: string; onClick: () => void; size?: number }) {
   const t = useTheme();
   const [hovered, setHovered] = useState(false);
   return (
     <div style={{ position: "relative", flexShrink: 0 }}>
-      <button
-        onClick={onClick}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center",
-          border: "none", outline: "none",
-          background: hovered ? t.surfaceHover : "transparent",
-          cursor: "pointer", borderRadius: 99, transition: "background 0.12s",
-        }}
-      >
+      <button onClick={onClick} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+        style={{ width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", border: "none", outline: "none", background: hovered ? t.surfaceHover : "transparent", cursor: "pointer", borderRadius: 99, transition: "background 0.12s" }}>
         <Icon name={icon} size={size} color={t.textMuted} />
       </button>
       {hovered && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
-          background: "#0F0F0F", color: "#fff", boxShadow: "0 8px 24px rgba(0,0,0,0.22)",
-          fontSize: 13, fontWeight: 600, padding: "6px 12px", borderRadius: 8,
-          whiteSpace: "nowrap", zIndex: 99999, pointerEvents: "none",
-        }}>
+        <div style={{ position: "absolute", top: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)", background: "#0F0F0F", color: "#fff", boxShadow: "0 8px 24px rgba(0,0,0,0.22)", fontSize: 13, fontWeight: 600, padding: "6px 12px", borderRadius: 8, whiteSpace: "nowrap", zIndex: 99999, pointerEvents: "none" }}>
           <div style={{ position: "absolute", top: -4, left: "50%", marginLeft: -4, width: 8, height: 8, background: "#0F0F0F", transform: "rotate(45deg)", borderRadius: 1 }} />
           {label}
         </div>
@@ -51,90 +37,37 @@ function IconBtn({ icon, label, onClick, size = 22 }: { icon: string; label: str
   );
 }
 
-// ── Agent selector dropdown ──────────────────────────────────────────────
+// ── Shared: Agent avatar ─────────────────────────────────────────────────
 
-function AgentSelector({ agents, activeId, customizations, onSelect }: {
-  agents: typeof AGENTS;
-  activeId: string;
-  customizations: Record<string, AgentCustomization>;
-  onSelect: (id: string) => void;
-}) {
-  const t = useTheme();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const custom = customizations[activeId];
+function AgentAvatar({ agentId, customizations, size = 40 }: { agentId: string; customizations: Record<string, AgentCustomization>; size?: number }) {
+  const custom = customizations[agentId];
   const hasCustom = custom?.avatarId && custom.avatarId !== "default";
-  const avatarSrc = hasCustom ? getAvatarSrc(custom.avatarId) : AGENTS.find(a => a.id === activeId)?.icon || "";
+  const src = hasCustom ? getAvatarSrc(custom.avatarId) : AGENTS.find(a => a.id === agentId)?.icon || "";
   const gradient = hasCustom ? getGradient(custom.colorId) : null;
-
-  useEffect(() => {
-    if (!open) return;
-    function handler(e: PointerEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("pointerdown", handler);
-    return () => document.removeEventListener("pointerdown", handler);
-  }, [open]);
-
   return (
-    <div ref={ref} style={{ position: "relative" }}>
-      <button onClick={() => setOpen(o => !o)} style={{
-        display: "flex", alignItems: "center", gap: 4, padding: "4px 6px 4px 4px",
-        border: "none", background: "transparent", cursor: "pointer", borderRadius: 99,
-        transition: "background 0.12s",
-      }}
-        onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
-        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-      >
-        <div style={{ width: 28, height: 28, borderRadius: "50%", overflow: "hidden", background: gradient ?? "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <img src={avatarSrc} alt="" width={28} height={28} style={{ display: "block", borderRadius: "50%", mixBlendMode: gradient ? "luminosity" : "normal" }} />
-        </div>
-        <Icon name="expand_more" size={18} color={t.textMuted} />
-      </button>
-      {open && (
-        <div style={{
-          position: "absolute", bottom: "calc(100% + 8px)", left: 0,
-          background: t.surface, border: `1px solid ${t.border}`, borderRadius: 14,
-          boxShadow: "0 12px 36px rgba(0,0,0,0.14)", zIndex: 9999, overflow: "hidden",
-          minWidth: 220, padding: 4,
-        }}>
-          {agents.map(a => {
-            const c = customizations[a.id];
-            const hasC = c?.avatarId && c.avatarId !== "default";
-            const src = hasC ? getAvatarSrc(c.avatarId) : a.icon;
-            const grad = hasC ? getGradient(c.colorId) : null;
-            const isActive = a.id === activeId;
-            return (
-              <button key={a.id} onClick={() => { onSelect(a.id); setOpen(false); }} style={{
-                display: "flex", alignItems: "center", gap: 10, width: "100%",
-                padding: "10px 12px", border: "none", borderRadius: 10,
-                background: isActive ? t.accentLight : "transparent",
-                cursor: "pointer", fontFamily: "inherit", textAlign: "left",
-                transition: "background 0.1s",
-              }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = t.surfaceHover; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = isActive ? t.accentLight : "transparent"; }}
-              >
-                <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", background: grad ?? "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <img src={src} alt="" width={32} height={32} style={{ display: "block", borderRadius: "50%", mixBlendMode: grad ? "luminosity" : "normal" }} />
-                </div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 500, color: t.text }}>{c?.name ?? a.name}</div>
-                  <div style={{ fontSize: 13, color: t.textMuted }}>{a.desc}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
+    <div style={{ width: size, height: size, borderRadius: "50%", overflow: "hidden", background: gradient ?? "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+      <img src={src} alt="" width={size} height={size} style={{ display: "block", borderRadius: "50%", mixBlendMode: gradient ? "luminosity" : "normal" }} />
     </div>
   );
 }
 
-// ── Home view — agent list ───────────────────────────────────────────────
+// ── Hub: Pending items + Activity ────────────────────────────────────────
 
-function AIHome({ agentStatuses, customizations, onSelectAgent, onClose, onExpand }: {
-  agentStatuses: Record<string, AgentStatus>;
+const PENDING_ITEMS: { agentId: string; icon: string; text: string; count: number; type: "warning" | "info" }[] = [
+  { agentId: "marketing",    icon: "campaign",     text: "campaigns pending approval",   count: 2, type: "warning" },
+  { agentId: "operations",   icon: "local_shipping", text: "orders running late",        count: 2, type: "warning" },
+  { agentId: "receptionist", icon: "phone_missed",   text: "missed calls today",         count: 6, type: "warning" },
+];
+
+const ACTIVITY_ITEMS: { agentId: string; text: string; time: string }[] = [
+  { agentId: "marketing",    text: "Drafted a weekend SMS campaign for 1,240 subscribers", time: "2 min ago" },
+  { agentId: "operations",   text: "Assigned orders #3492 and #3495 to Kira Jones",       time: "5 min ago" },
+  { agentId: "receptionist", text: "Booked reservation for Martinez party at 6 PM",        time: "12 min ago" },
+  { agentId: "marketing",    text: "Created coupon code WEEKEND20 — 20% off",              time: "1h ago" },
+  { agentId: "operations",   text: "Notified customers about delayed orders #3480, #3485", time: "1h ago" },
+];
+
+function AIHub({ customizations, onSelectAgent, onClose, onExpand }: {
   customizations: Record<string, AgentCustomization>;
   onSelectAgent: (id: string) => void;
   onClose: () => void;
@@ -143,59 +76,98 @@ function AIHome({ agentStatuses, customizations, onSelectAgent, onClose, onExpan
   const t = useTheme();
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 16px 16px 22px", flexShrink: 0 }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 16px 14px 22px", flexShrink: 0 }}>
         <span style={{ fontSize: 18, fontWeight: 700, color: t.text, letterSpacing: "-0.02em" }}>AI Workforce</span>
         <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
           <IconBtn icon="open_in_full" label="Expand" onClick={onExpand} size={18} />
           <IconBtn icon="close" label="Close" onClick={onClose} />
         </div>
       </div>
-      <div className="scroll-subtle" style={{ flex: 1, overflow: "auto", padding: "0 6px 16px" }}>
-        {AGENTS.map(agent => {
-          const custom = customizations[agent.id];
-          const status = agentStatuses[agent.id];
-          const hasCustomAvatar = custom?.avatarId && custom.avatarId !== "default";
-          const avatarSrc = hasCustomAvatar ? getAvatarSrc(custom.avatarId) : agent.icon;
-          const gradient = hasCustomAvatar ? getGradient(custom.colorId) : null;
-          return (
-            <button key={agent.id} onClick={() => onSelectAgent(agent.id)} style={{
-              display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", borderRadius: 12,
-              border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
-              transition: "background 120ms ease", width: "100%",
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-            >
-              <div style={{ position: "relative", width: 44, height: 44, flexShrink: 0 }}>
-                <div style={{ width: 44, height: 44, borderRadius: "50%", background: gradient ?? "transparent", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <img src={avatarSrc} alt="" width={44} height={44} style={{ display: "block", borderRadius: "50%", mixBlendMode: gradient ? "luminosity" : "normal" }} />
+
+      <div className="scroll-subtle" style={{ flex: 1, overflow: "auto", padding: "0 16px 20px" }}>
+        {/* Pending items */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", padding: "0 6px 10px" }}>Needs your attention</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {PENDING_ITEMS.map((item, i) => {
+              const agent = AGENTS.find(a => a.id === item.agentId)!;
+              const custom = customizations[item.agentId];
+              return (
+                <button key={i} onClick={() => onSelectAgent(item.agentId)} style={{
+                  display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 12,
+                  border: "none", background: t.bgTertiary, cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                  transition: "background 120ms ease", width: "100%",
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = t.bgTertiary; }}
+                >
+                  <AgentAvatar agentId={item.agentId} customizations={customizations} size={36} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 500, color: t.text }}>
+                      <span style={{ fontWeight: 700 }}>{item.count}</span> {item.text}
+                    </div>
+                    <div style={{ fontSize: 13, color: t.textMuted, marginTop: 1 }}>{custom?.name ?? agent.name}</div>
+                  </div>
+                  <Icon name="chevron_right" size={20} color={t.textMuted} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Recent activity */}
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", padding: "0 6px 10px" }}>Recent activity</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {ACTIVITY_ITEMS.map((item, i) => (
+              <button key={i} onClick={() => onSelectAgent(item.agentId)} style={{
+                display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 14px", borderRadius: 10,
+                border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                transition: "background 120ms ease", width: "100%",
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+              >
+                <AgentAvatar agentId={item.agentId} customizations={customizations} size={28} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, color: t.text, lineHeight: "20px" }}>{item.text}</div>
+                  <div style={{ fontSize: 12, color: t.textMuted, marginTop: 2 }}>{item.time}</div>
                 </div>
-                <div style={{ position: "absolute", bottom: -1, right: -1, width: 12, height: 12, borderRadius: "50%", background: "#22C55E", border: `2px solid ${t.surface}` }} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: status?.unread ? 600 : 500, color: t.text }}>{custom?.name ?? agent.name}</div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-                  {status?.isTyping ? (
-                    <>
-                      <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                        {[0,1,2].map(i => <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: t.accent, animation: `dotPulse 1.4s ease ${i * 0.16}s infinite` }} />)}
-                      </div>
-                      <span style={{ fontSize: 15, color: t.accent, fontWeight: 500 }}>Typing…</span>
-                    </>
-                  ) : (
-                    <span style={{ fontSize: 15, color: status?.unread ? t.text : t.textMuted, fontWeight: status?.unread ? 500 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {status?.lastMsg ?? agent.desc}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
-                {status?.lastTime && <span style={{ fontSize: 12, color: t.textMuted }}>{status.lastTime}</span>}
-                {status?.unread && <div style={{ width: 9, height: 9, borderRadius: "50%", background: "#EF4444" }} />}
-              </div>
-            </button>
-          );
-        })}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Agent rows — quick access */}
+        <div style={{ marginTop: 20, borderTop: `1px solid ${t.border}`, paddingTop: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: t.textMuted, textTransform: "uppercase", letterSpacing: "0.05em", padding: "0 6px 10px" }}>Your agents</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {AGENTS.map(agent => {
+              const custom = customizations[agent.id];
+              return (
+                <button key={agent.id} onClick={() => onSelectAgent(agent.id)} style={{
+                  display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10,
+                  border: "none", background: "transparent", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                  transition: "background 120ms ease", width: "100%",
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                >
+                  <div style={{ position: "relative" }}>
+                    <AgentAvatar agentId={agent.id} customizations={customizations} size={36} />
+                    <div style={{ position: "absolute", bottom: -1, right: -1, width: 10, height: 10, borderRadius: "50%", background: "#22C55E", border: `2px solid ${t.surface}` }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: t.text }}>{custom?.name ?? agent.name}</div>
+                    <div style={{ fontSize: 13, color: t.textMuted }}>{agent.desc}</div>
+                  </div>
+                  <Icon name="chevron_right" size={18} color={t.textMuted} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -226,10 +198,8 @@ export default function AIComposer() {
   const [expanded, setExpanded] = useState(false);
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const [editingAgent, setEditingAgent] = useState<string | null>(null);
-  const [selectedAgent, setSelectedAgent] = useState("marketing");
   const [barFocused, setBarFocused] = useState(false);
   const [barValue, setBarValue] = useState("");
-  const barRef = useRef<HTMLInputElement>(null);
 
   const [agentCustom, setAgentCustom] = useState<Record<string, AgentCustomization>>({
     marketing:    { name: "Marketing AI",    colorId: "pink",   avatarId: "square" },
@@ -250,26 +220,18 @@ export default function AIComposer() {
     setAgentStatuses(prev => {
       const current = prev[agentId] ?? { isTyping: false, unread: false };
       const isActive = activeAgentRef.current === agentId;
-      return {
-        ...prev,
-        [agentId]: {
-          isTyping: update.isTyping,
-          lastMsg: update.lastMsg ?? current.lastMsg,
-          lastTime: update.lastTime ?? current.lastTime,
-          unread: update.lastMsg !== undefined && !isActive ? true : current.unread,
-        },
-      };
+      return { ...prev, [agentId]: { isTyping: update.isTyping, lastMsg: update.lastMsg ?? current.lastMsg, lastTime: update.lastTime ?? current.lastTime, unread: update.lastMsg !== undefined && !isActive ? true : current.unread } };
     });
   }
 
   function openAgent(id: string) {
     setActiveAgent(id);
-    setSelectedAgent(id);
+    setEditingAgent(null);
     setAgentStatuses(prev => ({ ...prev, [id]: { ...prev[id], unread: false } }));
     if (!open) setOpen(true);
   }
 
-  // Simulate incoming messages
+  // Simulate incoming
   useEffect(() => {
     function now() { return new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); }
     const t1 = setTimeout(() => setAgentStatuses(prev => ({ ...prev, operations: { ...prev.operations, isTyping: true } })), 3000);
@@ -299,19 +261,22 @@ export default function AIComposer() {
 
   function handleBarSubmit() {
     const msg = barValue.trim();
-    if (!msg) return;
-    openAgent(selectedAgent);
+    if (!msg) { setOpen(true); return; }
+    // Simple routing: check keywords
+    if (/campaign|sms|market|coupon|flyer|budget/i.test(msg)) openAgent("marketing");
+    else if (/order|driver|late|deliver|route|assign/i.test(msg)) openAgent("operations");
+    else if (/call|reserv|phone|faq|miss/i.test(msg)) openAgent("receptionist");
+    else openAgent("marketing"); // default
     setBarValue("");
-    // TODO: auto-send msg to the agent
   }
 
   return (
     <>
-      {/* Floating composer bar */}
+      {/* ── Floating composer bar ── */}
       <div style={{
         position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 997,
-        display: "flex", alignItems: "center", gap: 4,
-        padding: "6px 6px 6px 6px",
+        display: "flex", alignItems: "center", gap: 2,
+        padding: "6px 8px 6px 16px",
         borderRadius: 99,
         background: t.surface,
         border: `1px solid ${barFocused ? t.accent : t.border}`,
@@ -319,34 +284,24 @@ export default function AIComposer() {
           ? `0 8px 32px rgba(0,0,0,0.12), 0 0 0 3px ${t.mode === "dark" ? "rgba(0,128,98,0.15)" : "rgba(0,128,98,0.08)"}`
           : "0 8px 32px rgba(0,0,0,0.12)",
         transition: "border-color 0.2s, box-shadow 0.2s",
-        maxWidth: 520, width: "90vw",
+        maxWidth: 480, width: "90vw",
       }}>
-        <AgentSelector agents={AGENTS} activeId={selectedAgent} customizations={agentCustom} onSelect={setSelectedAgent} />
+        <Icon name="auto_awesome" size={20} color={t.accent} fill style={{ flexShrink: 0 }} />
         <input
-          ref={barRef}
           value={barValue}
           onChange={e => setBarValue(e.target.value)}
-          onFocus={() => setBarFocused(true)}
+          onFocus={() => { setBarFocused(true); if (!open) setOpen(true); }}
           onBlur={() => setBarFocused(false)}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleBarSubmit(); } }}
-          onClick={() => { if (!open) setOpen(true); }}
           placeholder="Ask anything to your agents"
-          style={{
-            flex: 1, border: "none", outline: "none", background: "transparent",
-            fontSize: 15, color: t.text, fontFamily: "inherit", padding: "8px 4px",
-          }}
+          style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: 15, color: t.text, fontFamily: "inherit", padding: "8px 8px" }}
         />
-        {/* Unread badge */}
         {unreadCount > 0 && !open && (
-          <div style={{
-            minWidth: 20, height: 20, borderRadius: 99,
-            background: "#EF4444", color: "#FFFFFF",
-            fontSize: 12, fontWeight: 700,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            padding: "0 6px", flexShrink: 0,
-          }}>{unreadCount}</div>
+          <div style={{ minWidth: 20, height: 20, borderRadius: 99, background: "#EF4444", color: "#FFFFFF", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 6px", flexShrink: 0 }}>
+            {unreadCount}
+          </div>
         )}
-        <button style={{
+        <button onClick={() => setOpen(o => !o)} style={{
           width: 34, height: 34, borderRadius: 99, border: "none", flexShrink: 0,
           background: "transparent", cursor: "pointer",
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -355,23 +310,22 @@ export default function AIComposer() {
           onMouseEnter={e => { e.currentTarget.style.background = t.surfaceHover; }}
           onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
         >
-          <Icon name="mic" size={22} color={t.textMuted} weight={400} />
+          <Icon name={open ? "expand_more" : "expand_less"} size={22} color={t.textMuted} weight={400} />
         </button>
       </div>
 
-      {/* Panel — above the composer bar */}
+      {/* ── Panel ── */}
       <div style={{
         position: "fixed",
-        bottom: 88,
+        bottom: 84,
         left: "50%",
         transform: open ? "translateX(-50%) translateY(0) scale(1)" : "translateX(-50%) translateY(12px) scale(0.97)",
-        width: expanded ? "min(90vw, 900px)" : 460,
-        maxHeight: expanded ? "calc(100vh - 120px)" : 520,
+        width: expanded ? "min(92vw, 900px)" : 480,
+        maxHeight: expanded ? "calc(100vh - 120px)" : 560,
         zIndex: 996,
         display: "flex", flexDirection: "column",
         background: t.surface,
         borderRadius: 20,
-        border: "none",
         boxShadow: "0 16px 64px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.06)",
         overflow: "hidden",
         opacity: open ? 1 : 0,
@@ -395,8 +349,7 @@ export default function AIComposer() {
             />
           </div>
         ) : (
-          <AIHome
-            agentStatuses={agentStatuses}
+          <AIHub
             customizations={agentCustom}
             onSelectAgent={openAgent}
             onClose={() => setOpen(false)}
@@ -405,7 +358,7 @@ export default function AIComposer() {
         )}
       </div>
 
-      {/* Backdrop when open */}
+      {/* Backdrop */}
       {open && <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 995, background: "rgba(0,0,0,0.03)" }} />}
     </>
   );
